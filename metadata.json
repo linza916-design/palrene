@@ -1,0 +1,6 @@
+{
+  "name": "Palrene",
+  "description": "Redefining relationships without boundaries through a cinematic, warm, and highly personalized social network built around emotional intelligence and AI connection guidance.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
