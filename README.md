@@ -1,20 +1,64 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Palrene
 
-# Run and deploy your AI Studio app
+A modern React and TypeScript web application built with Vite.
 
-This contains everything you need to run your app locally.
+## 🚀 Features
 
-View your app in AI Studio: https://ai.studio/apps/5f347d80-01bc-4ec6-b009-8dcca894d08c
+- **React & TypeScript** – Full type safety and modern component architecture.
+- **Vite** – Lightning-fast build tool and development server.
+- **Global State Management** – Centralized application state management.
 
-## Run Locally
+## 🛠️ Tech Stack
 
-**Prerequisites:**  Node.js
+- **Frontend:** React, TypeScript
+- **Build Tool:** Vite
+- **Styling:** CSS / Custom Styles
 
+## 📦 Installation & Setup
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Follow these steps to get the project running locally:
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com
+   cd palrene
+   ```
+
+2. **Install dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+   The application will be available at `http://localhost:5173` (or the port specified in your terminal).
+
+## 🏗️ Building for Production
+
+To create an optimized production build, run:
+
+```bash
+npm run build
+```
+
+To preview the production build locally:
+
+```bash
+npm run preview
+```
+
+## 📂 Project Structure
+
+```text
+├── src/
+│   ├── main.tsx        # Application entry point
+│   ├── store.ts        # Global state management
+│   ├── types.ts        # TypeScript interfaces and type definitions
+│   └── index.css       # Global styles
+├── package.json        # Dependencies and scripts
+└── tsconfig.json       # TypeScript configuration
+```
