@@ -1,24 +1,24 @@
 import React, { useState } from "react";
 import { useStore } from "../../store";
-import { 
-  Search, 
-  Sparkles, 
-  SlidersHorizontal, 
-  MapPin, 
-  Heart, 
-  Tag, 
+import {
+  Search,
+  Sparkles,
+  SlidersHorizontal,
+  MapPin,
+  Heart,
+  Tag,
   MessageSquare,
-  Smile
+  Smile,
 } from "lucide-react";
 
 export default function SearchPanel() {
-  const { 
-    profiles, 
-    currentUser, 
-    startConversation, 
+  const {
+    profiles,
+    currentUser,
+    startConversation,
     setView,
     searchQuery,
-    setSearchQuery 
+    setSearchQuery,
   } = useStore();
 
   const [genderFilter, setGenderFilter] = useState("all");
@@ -31,9 +31,9 @@ export default function SearchPanel() {
   };
 
   // Compile active tag options from profile interests
-  const allInterests = Array.from(new Set(
-    profiles.flatMap((p) => p.interests || [])
-  ));
+  const allInterests = Array.from(
+    new Set(profiles.flatMap((p) => p.interests || [])),
+  );
 
   // Perform matchmaking logic
   const matchPerformance = profiles.filter((prof) => {
@@ -45,7 +45,9 @@ export default function SearchPanel() {
     // Search query match
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const nameMatches = prof.full_name.toLowerCase().includes(q) || prof.username.toLowerCase().includes(q);
+      const nameMatches =
+        prof.full_name.toLowerCase().includes(q) ||
+        prof.username.toLowerCase().includes(q);
       const bioMatches = (prof.bio || "").toLowerCase().includes(q);
       if (!nameMatches && !bioMatches) return false;
     }
@@ -56,7 +58,10 @@ export default function SearchPanel() {
     }
 
     // Interests list matches
-    if (interestFilter !== "all" && !(prof.interests || []).includes(interestFilter)) {
+    if (
+      interestFilter !== "all" &&
+      !(prof.interests || []).includes(interestFilter)
+    ) {
       return false;
     }
 
@@ -73,7 +78,6 @@ export default function SearchPanel() {
 
   return (
     <div className="flex-1 p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-62px)] overflow-y-auto pb-c-safe">
-      
       {/* Search and Filters workspace */}
       <div className="lg:col-span-1 p-5 rounded-3xl bg-neutral-50 dark:bg-zinc-950/45 border border-neutral-150/45 dark:border-neutral-900 shadow-sm space-y-6 text-left">
         <div className="space-y-1">
@@ -81,14 +85,22 @@ export default function SearchPanel() {
             <SlidersHorizontal size={16} className="text-orange-500" />
             <span>Connection Alignment Workspace</span>
           </h2>
-          <p className="text-[11px] text-neutral-400">Calibrate filters to identify humans reflecting your precise frequency.</p>
+          <p className="text-[11px] text-neutral-400">
+            Calibrate filters to identify humans reflecting your precise
+            frequency.
+          </p>
         </div>
 
         {/* Query Input */}
         <div className="space-y-1">
-          <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Search keywords</label>
+          <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+            Search keywords
+          </label>
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-3 text-neutral-450" />
+            <Search
+              size={14}
+              className="absolute left-3 top-3 text-neutral-450"
+            />
             <input
               type="text"
               placeholder="e.g. vintage, vinyl, space"
@@ -101,7 +113,9 @@ export default function SearchPanel() {
 
         {/* Gender Filters */}
         <div className="space-y-1.5">
-          <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Gender Identity Filter</span>
+          <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+            Gender Identity Filter
+          </span>
           <div className="grid grid-cols-3 gap-1.5">
             {["all", "Male", "Female"].map((g) => (
               <button
@@ -121,7 +135,9 @@ export default function SearchPanel() {
 
         {/* Interests dropdown tag */}
         <div className="space-y-1">
-          <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Resonant Interest tag</label>
+          <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+            Resonant Interest tag
+          </label>
           <select
             value={interestFilter}
             onChange={(e) => setInterestFilter(e.target.value)}
@@ -129,7 +145,9 @@ export default function SearchPanel() {
           >
             <option value="all">Any aligned interest</option>
             {allInterests.map((interest) => (
-              <option key={interest} value={interest}>#{interest}</option>
+              <option key={interest} value={interest}>
+                #{interest}
+              </option>
             ))}
           </select>
         </div>
@@ -138,7 +156,9 @@ export default function SearchPanel() {
         <div className="space-y-1">
           <div className="flex justify-between text-[10px] font-mono text-neutral-550">
             <span>Age Bound</span>
-            <span className="font-bold text-orange-500">Under {ageLimit} yrs</span>
+            <span className="font-bold text-orange-500">
+              Under {ageLimit} yrs
+            </span>
           </div>
           <input
             type="range"
@@ -158,8 +178,10 @@ export default function SearchPanel() {
 
       {/* Result list grids */}
       <div className="lg:col-span-2 text-left space-y-4">
-        <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-400 py-1">Alignment metrics results</h3>
-        
+        <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-400 py-1">
+          Alignment metrics results
+        </h3>
+
         {matchPerformance.length === 0 ? (
           <div className="text-center py-20 text-xs text-neutral-450 font-mono">
             No soul circles found with these exact boundaries. Loosen bounds.
@@ -167,7 +189,7 @@ export default function SearchPanel() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {matchPerformance.map((prof) => (
-              <div 
+              <div
                 key={prof.id}
                 className="p-5 border border-neutral-150/50 dark:border-neutral-900 rounded-3xl bg-white dark:bg-zinc-950/45 space-y-4 hover:shadow hover:border-orange-500/20 transition duration-300 relative overflow-hidden group"
               >
@@ -181,9 +203,13 @@ export default function SearchPanel() {
                     <div>
                       <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-150 flex items-center gap-1 leading-none">
                         {prof.full_name}
-                        {prof.is_verified && <span className="text-[10px] text-orange-500">✔</span>}
+                        {prof.is_verified && (
+                          <span className="text-[10px] text-orange-500">✔</span>
+                        )}
                       </h4>
-                      <p className="text-[9px] text-neutral-400 font-mono mt-0.5">@{prof.username}</p>
+                      <p className="text-[9px] text-neutral-400 font-mono mt-0.5">
+                        @{prof.username}
+                      </p>
                       {prof.location && (
                         <span className="flex items-center gap-0.5 text-[8.5px] text-neutral-400 font-serif leading-none mt-1">
                           <MapPin size={9} /> {prof.location}
@@ -198,13 +224,15 @@ export default function SearchPanel() {
                 </div>
 
                 <p className="text-xs text-neutral-550 dark:text-neutral-400 leading-relaxed italic line-clamp-2">
-                  "{prof.bio || 'Seeking borderless resonances.'}"
+                  "{prof.bio || "Seeking borderless resonances."}"
                 </p>
 
                 {/* Match percentage / goal indicator */}
                 <div className="flex items-center justify-between text-[9px] font-mono text-neutral-450 dark:text-neutral-500 border-t border-neutral-100/40 dark:border-neutral-900/40 pt-3">
-                  <span className="capitalize">Goal: {prof.recognition_goals?.[0] || 'Friendship'}</span>
-                  
+                  <span className="capitalize">
+                    Goal: {prof.recognition_goals?.[0] || "Friendship"}
+                  </span>
+
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleProfileInspect(prof.id)}
@@ -214,19 +242,17 @@ export default function SearchPanel() {
                     </button>
                     <button
                       onClick={() => startConversation(prof.id)}
-                      className="p-1 px-2.5 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded hover:scale-101 transition"
+                      className="p-1 px-2.5 bg-linear-to-r from-red-500 to-orange-500 text-white rounded hover:scale-101 transition"
                     >
                       Whisper
                     </button>
                   </div>
                 </div>
-
               </div>
             ))}
           </div>
         )}
       </div>
-
     </div>
   );
 }

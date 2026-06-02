@@ -1,7 +1,16 @@
 import React, { useState } from "react";
 import { useStore } from "../../store";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Lock, Mail, User, ShieldCheck, Heart, AlertCircle, Sparkles } from "lucide-react";
+import {
+  X,
+  Lock,
+  Mail,
+  User,
+  ShieldCheck,
+  Heart,
+  AlertCircle,
+  Sparkles,
+} from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -9,15 +18,15 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const { 
-    login, 
-    signup, 
+  const {
+    login,
+    signup,
     resetPassword,
-    registrationStep, 
-    registrationData, 
-    nextRegistrationStep, 
-    prevRegistrationStep, 
-    finishRegistration 
+    registrationStep,
+    registrationData,
+    nextRegistrationStep,
+    prevRegistrationStep,
+    finishRegistration,
   } = useStore();
 
   const [mode, setMode] = useState<"login" | "signup" | "reset">("login");
@@ -62,7 +71,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         // Do not close, we will enter registrationStep 1!
       } else {
         await resetPassword(email);
-        alert("If that email resonance matches, check your inbox for instructions!");
+        alert(
+          "If that email resonance matches, check your inbox for instructions!",
+        );
         setMode("login");
       }
     } catch (err: any) {
@@ -92,7 +103,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const generateUsername = (name: string) => {
     const clean = name.toLowerCase().replace(/[^a-z0-9]/g, "_");
     const suffix = Math.floor(1000 + Math.random() * 9000);
-    return `${clean || 'human'}_${suffix}`;
+    return `${clean || "human"}_${suffix}`;
   };
 
   // Validation DOBS to protect minors (Only 18+ allowed!)
@@ -101,7 +112,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     const birthday = new Date(dateString);
     const today = new Date();
     // Milliseconds in a year calculation
-    const age = (today.getTime() - birthday.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+    const age =
+      (today.getTime() - birthday.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
     return age >= 18;
   };
 
@@ -118,17 +130,21 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         }
         nextRegistrationStep({
           full_name: fullName,
-          username: generateUsername(fullName)
+          username: generateUsername(fullName),
         });
         break;
 
       case 2:
         // Set default values if empty
-        const finalAvatar = avatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${fullName || 'onboarding'}`;
-        const finalBanner = bannerUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80";
+        const finalAvatar =
+          avatarUrl ||
+          `https://api.dicebear.com/7.x/adventurer/svg?seed=${fullName || "onboarding"}`;
+        const finalBanner =
+          bannerUrl ||
+          "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80";
         nextRegistrationStep({
           avatar_url: finalAvatar,
-          banner_url: finalBanner
+          banner_url: finalBanner,
         });
         break;
 
@@ -146,13 +162,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           return;
         }
         if (!validateAge(dob)) {
-          setError("Boundary rules: Only individuals 18+ are permitted on Palrene.");
+          setError(
+            "Boundary rules: Only individuals 18+ are permitted on Palrene.",
+          );
           return;
         }
         nextRegistrationStep({
           bio: bio || "Navigating earthly mysteries in high spirits.",
           location: location || "Cosmopolis",
-          dob: dob
+          dob: dob,
         });
         break;
 
@@ -163,7 +181,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         }
         nextRegistrationStep({
           gender,
-          gender_preference: genderPreference || "Any"
+          gender_preference: genderPreference || "Any",
         });
         break;
 
@@ -174,14 +192,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         }
         nextRegistrationStep({
           race,
-          preferred_race: preferredRace || "Any"
+          preferred_race: preferredRace || "Any",
         });
         break;
 
       case 7:
         nextRegistrationStep({
           age_range_min: ageMin,
-          age_range_max: ageMax
+          age_range_max: ageMax,
         });
         break;
 
@@ -231,22 +249,35 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             {registrationStep === 0 && (
               <div className="p-6 sm:p-8 space-y-6">
                 <div className="text-center space-y-1 mt-2">
-                  <span className="text-[9px] font-mono font-bold tracking-widest uppercase bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+                  <span className="text-[9px] font-mono font-bold tracking-widest uppercase bg-linear-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
                     Palrene Core API Secure Link
                   </span>
                   <h3 className="text-xl font-serif font-bold text-neutral-900 dark:text-white">
-                    {mode === "login" ? "Resonance Log In" : mode === "signup" ? "Create Infinite Connection" : "Mend Connection Socket"}
+                    {mode === "login"
+                      ? "Resonance Log In"
+                      : mode === "signup"
+                        ? "Create Infinite Connection"
+                        : "Mend Connection Socket"}
                   </h3>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    {mode === "login" ? "Enter your harbor credentials." : mode === "signup" ? "Begin progressive profile registration." : "Retrieve email access link safely."}
+                    {mode === "login"
+                      ? "Enter your harbor credentials."
+                      : mode === "signup"
+                        ? "Begin progressive profile registration."
+                        : "Retrieve email access link safely."}
                   </p>
                 </div>
 
                 <form onSubmit={handleAuthSubmit} className="space-y-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 capitalize">Email harbor</label>
+                    <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 capitalize">
+                      Email harbor
+                    </label>
                     <div className="relative">
-                      <Mail size={15} className="absolute left-3.5 top-3.5 text-neutral-400" />
+                      <Mail
+                        size={15}
+                        className="absolute left-3.5 top-3.5 text-neutral-400"
+                      />
                       <input
                         type="email"
                         placeholder="your@resonance.com"
@@ -260,7 +291,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   {mode !== "reset" && (
                     <div className="space-y-1">
                       <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Secret credential</label>
+                        <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+                          Secret credential
+                        </label>
                         {mode === "login" && (
                           <button
                             type="button"
@@ -272,7 +305,10 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         )}
                       </div>
                       <div className="relative">
-                        <Lock size={15} className="absolute left-3.5 top-3.5 text-neutral-400" />
+                        <Lock
+                          size={15}
+                          className="absolute left-3.5 top-3.5 text-neutral-400"
+                        />
                         <input
                           type="password"
                           placeholder="••••••••••••"
@@ -287,9 +323,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-2.5 font-mono text-xs font-bold tracking-wider uppercase text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-xl hover:from-red-600 hover:to-orange-600 transition duration-300 disabled:opacity-50"
+                    className="w-full py-2.5 font-mono text-xs font-bold tracking-wider uppercase text-white bg-linear-to-r from-red-500 to-orange-500 rounded-xl hover:from-red-600 hover:to-orange-600 transition duration-300 disabled:opacity-50"
                   >
-                    {loading ? "Aligning channels..." : mode === "login" ? "Establish connection" : mode === "signup" ? "Initialize socket" : "Recover channel"}
+                    {loading
+                      ? "Aligning channels..."
+                      : mode === "login"
+                        ? "Establish connection"
+                        : mode === "signup"
+                          ? "Initialize socket"
+                          : "Recover channel"}
                   </button>
                 </form>
 
@@ -323,8 +365,10 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
             {/* STEP 1-8 PROGRESSIVE REGISTRATION MODAL ONBOARDING */}
             {registrationStep > 0 && (
-              <form onSubmit={handleStepSubmit} className="p-6 sm:p-8 space-y-6">
-                
+              <form
+                onSubmit={handleStepSubmit}
+                className="p-6 sm:p-8 space-y-6"
+              >
                 {/* Onboarding step progress indicator count */}
                 <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-neutral-900">
                   <div className="flex items-center space-x-1.5 text-[10px] font-mono text-orange-500 dark:text-orange-400">
@@ -340,13 +384,23 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 {registrationStep === 1 && (
                   <div className="space-y-4">
                     <div className="text-center space-y-1">
-                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">Basic Identification</h4>
-                      <p className="text-[11px] text-neutral-400">How should our human circles address you? We'll generate a unique handle for anonymity.</p>
+                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">
+                        Basic Identification
+                      </h4>
+                      <p className="text-[11px] text-neutral-400">
+                        How should our human circles address you? We'll generate
+                        a unique handle for anonymity.
+                      </p>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">What is your Full Name?</label>
+                      <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+                        What is your Full Name?
+                      </label>
                       <div className="relative">
-                        <User size={15} className="absolute left-3.5 top-3.5 text-neutral-400" />
+                        <User
+                          size={15}
+                          className="absolute left-3.5 top-3.5 text-neutral-400"
+                        />
                         <input
                           type="text"
                           placeholder="e.g. Juliet Rosales"
@@ -363,18 +417,28 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 {registrationStep === 2 && (
                   <div className="space-y-4">
                     <div className="text-center space-y-1">
-                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">Profile Customization</h4>
-                      <p className="text-[11px] text-neutral-400">Visual aesthetics define resonance. Add custom URLs or utilize premium presets.</p>
+                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">
+                        Profile Customization
+                      </h4>
+                      <p className="text-[11px] text-neutral-400">
+                        Visual aesthetics define resonance. Add custom URLs or
+                        utilize premium presets.
+                      </p>
                     </div>
                     <div className="space-y-3 px-1 text-left">
                       <div className="flex items-center space-x-3 bg-neutral-50 dark:bg-zinc-900/50 p-2.5 rounded-2xl border border-neutral-150 dark:border-neutral-850">
                         <img
-                          src={avatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${fullName || 'onboarding'}`}
+                          src={
+                            avatarUrl ||
+                            `https://api.dicebear.com/7.x/adventurer/svg?seed=${fullName || "onboarding"}`
+                          }
                           alt="Avatar preview"
                           className="w-12 h-12 rounded-full object-cover border-2 border-orange-500"
                         />
                         <div className="flex-1">
-                          <label className="text-[9px] font-mono text-neutral-500 dark:text-neutral-450 block font-bold uppercase tracking-wider">Avatar Image URL (Optional)</label>
+                          <label className="text-[9px] font-mono text-neutral-500 dark:text-neutral-450 block font-bold uppercase tracking-wider">
+                            Avatar Image URL (Optional)
+                          </label>
                           <input
                             type="url"
                             placeholder="https://images.unsplash.com/... (or left blank for vector)"
@@ -387,12 +451,17 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
                       <div className="flex items-center space-x-3 bg-neutral-50 dark:bg-zinc-900/50 p-2.5 rounded-2xl border border-neutral-150 dark:border-neutral-850">
                         <img
-                          src={bannerUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80"}
+                          src={
+                            bannerUrl ||
+                            "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80"
+                          }
                           alt="Banner preview"
                           className="w-12 h-12 rounded-lg object-cover border border-neutral-350 dark:border-neutral-800"
                         />
                         <div className="flex-1">
-                          <label className="text-[9px] font-mono text-neutral-500 dark:text-neutral-450 block font-bold uppercase tracking-wider">Banner Image URL (Optional)</label>
+                          <label className="text-[9px] font-mono text-neutral-500 dark:text-neutral-450 block font-bold uppercase tracking-wider">
+                            Banner Image URL (Optional)
+                          </label>
                           <input
                             type="url"
                             placeholder="https://images.unsplash.com/banner-art..."
@@ -404,14 +473,23 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       </div>
 
                       <div className="text-center space-y-1">
-                        <span className="text-[10px] font-mono text-neutral-400">Precompiled Avatar Preset Vectors Selection:</span>
+                        <span className="text-[10px] font-mono text-neutral-400">
+                          Precompiled Avatar Preset Vectors Selection:
+                        </span>
                         <div className="flex items-center justify-center gap-2 pt-1">
-                          {["juliet", "aesthetic", "resonance", "starlight"].map((seed) => (
+                          {[
+                            "juliet",
+                            "aesthetic",
+                            "resonance",
+                            "starlight",
+                          ].map((seed) => (
                             <button
                               key={seed}
                               type="button"
                               onClick={() => {
-                                setAvatarUrl(`https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}`);
+                                setAvatarUrl(
+                                  `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}`,
+                                );
                               }}
                               className="px-2.5 py-1 text-[9px] font-mono rounded bg-neutral-200 dark:bg-zinc-850 text-neutral-700 dark:text-neutral-300 hover:bg-orange-500 hover:text-white transition cursor-pointer"
                             >
@@ -428,14 +506,27 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 {registrationStep === 3 && (
                   <div className="space-y-4">
                     <div className="text-center space-y-1">
-                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">Interests Discovery</h4>
-                      <p className="text-[11px] text-neutral-400">We'll algorithmically channel you into subgroups. Select a minimum of 3 interests.</p>
+                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">
+                        Interests Discovery
+                      </h4>
+                      <p className="text-[11px] text-neutral-400">
+                        We'll algorithmically channel you into subgroups. Select
+                        a minimum of 3 interests.
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1.5">
                       {[
-                        "relationships", "music", "science", "memes", "foods", 
-                        "travel", "nature", "gaming", "spirituality", "entrepreneurship"
+                        "relationships",
+                        "music",
+                        "science",
+                        "memes",
+                        "foods",
+                        "travel",
+                        "nature",
+                        "gaming",
+                        "spirituality",
+                        "entrepreneurship",
                       ].map((interest) => {
                         const isChosen = selectedInterests.includes(interest);
                         return (
@@ -444,7 +535,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             type="button"
                             onClick={() => handleInterestToggle(interest)}
                             className={`p-2.5 rounded-xl border text-[11px] font-mono text-left outline-none transition capitalize ${
-                              isChosen 
+                              isChosen
                                 ? "bg-orange-500/10 dark:bg-orange-950/20 border-orange-500 text-orange-600 dark:text-orange-400"
                                 : "bg-neutral-50 dark:bg-black/30 border-neutral-200 dark:border-neutral-850 text-neutral-650 dark:text-neutral-450 hover:border-neutral-300"
                             }`}
@@ -461,13 +552,20 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 {registrationStep === 4 && (
                   <div className="space-y-4">
                     <div className="text-center space-y-1">
-                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">Bio & Alignment info</h4>
-                      <p className="text-[11px] text-neutral-400">Tell other seekers what drives your vibration. Only individuals 18+ allowed.</p>
+                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">
+                        Bio & Alignment info
+                      </h4>
+                      <p className="text-[11px] text-neutral-400">
+                        Tell other seekers what drives your vibration. Only
+                        individuals 18+ allowed.
+                      </p>
                     </div>
 
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Short Bio</label>
+                        <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+                          Short Bio
+                        </label>
                         <textarea
                           placeholder="I am walking along quiet twilight paths..."
                           value={bio}
@@ -477,7 +575,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Your Current City/Location</label>
+                        <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+                          Your Current City/Location
+                        </label>
                         <input
                           type="text"
                           placeholder="e.g. Kyoto, Japan"
@@ -490,7 +590,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       <div className="space-y-1">
                         <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-450 flex items-center justify-between">
                           <span>Date of Birth</span>
-                          <span className="text-[8px] bg-red-500/10 text-red-500 px-1.5 rounded uppercase font-bold tracking-wider leading-none select-none">18+ strictly mandatory</span>
+                          <span className="text-[8px] bg-red-500/10 text-red-500 px-1.5 rounded uppercase font-bold tracking-wider leading-none select-none">
+                            18+ strictly mandatory
+                          </span>
                         </label>
                         <input
                           type="date"
@@ -507,33 +609,44 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 {registrationStep === 5 && (
                   <div className="space-y-4">
                     <div className="text-center space-y-1">
-                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">Identity Identification</h4>
-                      <p className="text-[11px] text-neutral-400">Choose gender identification and matching configuration values.</p>
+                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">
+                        Identity Identification
+                      </h4>
+                      <p className="text-[11px] text-neutral-400">
+                        Choose gender identification and matching configuration
+                        values.
+                      </p>
                     </div>
 
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Select Gender identification</span>
+                        <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+                          Select Gender identification
+                        </span>
                         <div className="flex gap-2">
-                          {["Female", "Male", "Non-binary", "fluid"].map((g) => (
-                            <button
-                              key={g}
-                              type="button"
-                              onClick={() => setGender(g)}
-                              className={`flex-1 py-2 text-xs font-mono rounded-lg border transition ${
-                                gender === g
-                                  ? "bg-orange-500 text-white border-transparent"
-                                  : "bg-neutral-50 dark:bg-black/40 border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-350"
-                              }`}
-                            >
-                              {g}
-                            </button>
-                          ))}
+                          {["Female", "Male", "Non-binary", "fluid"].map(
+                            (g) => (
+                              <button
+                                key={g}
+                                type="button"
+                                onClick={() => setGender(g)}
+                                className={`flex-1 py-2 text-xs font-mono rounded-lg border transition ${
+                                  gender === g
+                                    ? "bg-orange-500 text-white border-transparent"
+                                    : "bg-neutral-50 dark:bg-black/40 border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-350"
+                                }`}
+                              >
+                                {g}
+                              </button>
+                            ),
+                          )}
                         </div>
                       </div>
 
                       <div className="space-y-1">
-                        <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Matching Preferences</span>
+                        <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+                          Matching Preferences
+                        </span>
                         <div className="flex gap-2">
                           {["Female", "Male", "Any"].map((g) => (
                             <button
@@ -559,15 +672,29 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 {registrationStep === 6 && (
                   <div className="space-y-4">
                     <div className="text-center space-y-1">
-                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">Race preferences values</h4>
-                      <p className="text-[11px] text-neutral-400">Palrene celebrates all ethnic frequencies. Matching configuration.</p>
+                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">
+                        Race preferences values
+                      </h4>
+                      <p className="text-[11px] text-neutral-400">
+                        Palrene celebrates all ethnic frequencies. Matching
+                        configuration.
+                      </p>
                     </div>
 
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Select Identity roots</span>
+                        <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+                          Select Identity roots
+                        </span>
                         <div className="grid grid-cols-2 gap-2">
-                          {["African", "Asian", "Caucasian", "Hispanic", "Middle Eastern", "Multiracial"].map((r) => (
+                          {[
+                            "African",
+                            "Asian",
+                            "Caucasian",
+                            "Hispanic",
+                            "Middle Eastern",
+                            "Multiracial",
+                          ].map((r) => (
                             <button
                               key={r}
                               type="button"
@@ -585,7 +712,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       </div>
 
                       <div className="space-y-1">
-                        <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Preferred match background</span>
+                        <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+                          Preferred match background
+                        </span>
                         <div className="grid grid-cols-3 gap-2">
                           {["Asian", "Caucasian", "Any"].map((r) => (
                             <button
@@ -611,15 +740,21 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 {registrationStep === 7 && (
                   <div className="space-y-4">
                     <div className="text-center space-y-1">
-                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">Age target boundaries</h4>
-                      <p className="text-[11px] text-neutral-400">Define search bounds for matching. Range selection.</p>
+                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">
+                        Age target boundaries
+                      </h4>
+                      <p className="text-[11px] text-neutral-400">
+                        Define search bounds for matching. Range selection.
+                      </p>
                     </div>
 
                     <div className="space-y-5 py-2">
                       <div className="space-y-1">
                         <div className="flex justify-between font-mono text-[10px] text-neutral-500">
                           <span>Minimum Age Limit</span>
-                          <span className="font-bold text-orange-500">{ageMin} yrs</span>
+                          <span className="font-bold text-orange-500">
+                            {ageMin} yrs
+                          </span>
                         </div>
                         <input
                           type="range"
@@ -634,14 +769,20 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                       <div className="space-y-1">
                         <div className="flex justify-between font-mono text-[10px] text-neutral-500">
                           <span>Maximum Age Limit</span>
-                          <span className="font-bold text-orange-500">{ageMax} yrs</span>
+                          <span className="font-bold text-orange-500">
+                            {ageMax} yrs
+                          </span>
                         </div>
                         <input
                           type="range"
                           min="18"
                           max="100"
                           value={ageMax}
-                          onChange={(e) => setAgeMax(Math.max(ageMin + 1, parseInt(e.target.value)))}
+                          onChange={(e) =>
+                            setAgeMax(
+                              Math.max(ageMin + 1, parseInt(e.target.value)),
+                            )
+                          }
                           className="w-full accent-orange-500 hover:accent-orange-600 transition"
                         />
                       </div>
@@ -653,14 +794,24 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 {registrationStep === 8 && (
                   <div className="space-y-4">
                     <div className="text-center space-y-1">
-                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">Connection Goals</h4>
-                      <p className="text-[11px] text-neutral-400">What are you seeking? Select matching values (can select multiple).</p>
+                      <h4 className="text-base font-serif font-semibold text-neutral-800 dark:text-white">
+                        Connection Goals
+                      </h4>
+                      <p className="text-[11px] text-neutral-400">
+                        What are you seeking? Select matching values (can select
+                        multiple).
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1.5">
                       {[
-                        "friendship", "long-term relationship", "mentorship", 
-                        "emotional support", "guidance", "networking", "communities"
+                        "friendship",
+                        "long-term relationship",
+                        "mentorship",
+                        "emotional support",
+                        "guidance",
+                        "networking",
+                        "communities",
                       ].map((goalOption) => {
                         const isChosen = goals.includes(goalOption);
                         return (
@@ -669,7 +820,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             type="button"
                             onClick={() => handleGoalToggle(goalOption)}
                             className={`p-2.5 rounded-xl border text-[11px] font-mono text-left outline-none transition capitalize ${
-                              isChosen 
+                              isChosen
                                 ? "bg-orange-500/10 dark:bg-orange-950/20 border-orange-500 text-orange-600 dark:text-orange-400"
                                 : "bg-neutral-50 dark:bg-black/30 border-neutral-200 dark:border-neutral-850 text-neutral-650 dark:text-neutral-450 hover:border-neutral-300"
                             }`}
@@ -698,15 +849,13 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
                   <button
                     type="submit"
-                    className="px-5 py-2 text-xs font-mono font-bold uppercase tracking-wider text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-xl hover:from-red-600 hover:to-orange-600 transition"
+                    className="px-5 py-2 text-xs font-mono font-bold uppercase tracking-wider text-white bg-linear-to-r from-red-500 to-orange-500 rounded-xl hover:from-red-600 hover:to-orange-600 transition"
                   >
                     {registrationStep === 8 ? "Unlock Palrene!" : "Continue"}
                   </button>
                 </div>
-
               </form>
             )}
-
           </motion.div>
         </div>
       )}

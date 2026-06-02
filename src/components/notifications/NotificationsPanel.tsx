@@ -1,14 +1,14 @@
 import React from "react";
 import { useStore } from "../../store";
-import { 
-  Bell, 
-  Heart, 
-  MessageSquare, 
-  UserPlus, 
-  Award, 
-  Sparkles, 
+import {
+  Bell,
+  Heart,
+  MessageSquare,
+  UserPlus,
+  Award,
+  Sparkles,
   Mail,
-  Trash2
+  Trash2,
 } from "lucide-react";
 
 export default function NotificationsPanel() {
@@ -43,7 +43,6 @@ export default function NotificationsPanel() {
 
   return (
     <div className="flex-1 max-w-lg mx-auto p-4 sm:p-5 h-[calc(100vh-62px)] overflow-y-auto pb-c-safe text-left space-y-6">
-      
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-900 pb-4">
         <div>
@@ -51,7 +50,10 @@ export default function NotificationsPanel() {
             <Bell className="text-orange-500" size={20} />
             <span>Echoes</span>
           </h2>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Echoes of emotional connections, likes, follows, and Poly AI signals.</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            Echoes of emotional connections, likes, follows, and Poly AI
+            signals.
+          </p>
         </div>
       </div>
 
@@ -59,8 +61,14 @@ export default function NotificationsPanel() {
       <div className="space-y-3">
         {notifications.length === 0 ? (
           <div className="text-center py-24 text-xs text-neutral-450 font-mono space-y-2">
-            <Bell size={24} className="text-neutral-300 dark:text-neutral-800 mx-auto animate-pulse" />
-            <p>Your connection timeline is silent. Join tribes to trigger ripples.</p>
+            <Bell
+              size={24}
+              className="text-neutral-300 dark:text-neutral-800 mx-auto animate-pulse"
+            />
+            <p>
+              Your connection timeline is silent. Join tribes to trigger
+              ripples.
+            </p>
           </div>
         ) : (
           notifications.map((notif) => {
@@ -70,7 +78,9 @@ export default function NotificationsPanel() {
                 key={notif.id}
                 onClick={() => handleNotificationClick(notif)}
                 className={`p-4 bg-white/70 dark:bg-zinc-950/45 border border-neutral-150/40 dark:border-neutral-900 rounded-3xl flex items-start space-x-3.5 transition duration-300 select-none cursor-pointer hover:border-orange-500/30 ${
-                  !notif.read ? "ring-1 ring-orange-500/10 bg-gradient-to-r from-orange-500/[0.01]" : ""
+                  !notif.read
+                    ? "ring-1 ring-orange-500/10 bg-linear-to-r from-orange-500/1"
+                    : ""
                 }`}
               >
                 {/* Visual Icon Indicator */}
@@ -101,8 +111,14 @@ export default function NotificationsPanel() {
                   </div>
 
                   <div className="flex items-center justify-between text-[8px] font-mono text-neutral-400 pt-1.5">
-                    <span>{new Date(notif.created_at).toLocaleDateString()} at {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    
+                    <span>
+                      {new Date(notif.created_at).toLocaleDateString()} at{" "}
+                      {new Date(notif.created_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+
                     {/* Simulated email delivery signature indicator */}
                     {notif.content.includes("[Simulated Email]") && (
                       <span className="flex items-center gap-1 text-[8px] text-orange-500 uppercase font-bold tracking-widest leading-none">
@@ -130,7 +146,6 @@ export default function NotificationsPanel() {
           })
         )}
       </div>
-
     </div>
   );
 }

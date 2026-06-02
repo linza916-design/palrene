@@ -1,18 +1,18 @@
 import React from "react";
 import { useStore } from "../../store";
-import { 
-  Home, 
-  Compass, 
-  MessageCircle, 
-  Users, 
-  User, 
-  Bell, 
-  Search, 
-  Sparkles, 
-  Shield, 
-  Settings, 
+import {
+  Home,
+  Compass,
+  MessageCircle,
+  Users,
+  User,
+  Bell,
+  Search,
+  Sparkles,
+  Shield,
+  Settings,
   LogOut,
-  Gift
+  Gift,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -32,22 +32,25 @@ export default function Sidebar() {
     { id: "settings", label: "Payment Plans & Settings", icon: Settings },
   ];
 
-  const dynamicProfile = profiles.find(p => p.id === currentUser.id);
-  const registeredHumans = profiles.filter(p => p.id !== "poly-ai");
-  const isFirstThreeRegistered = registeredHumans.slice(0, 3).some(p => p.id === currentUser.id);
-  const isUserAdmin = isFirstThreeRegistered || currentUser.email.toLowerCase() === "kamyavince@gmail.com";
+  const dynamicProfile = profiles.find((p) => p.id === currentUser.id);
+  const registeredHumans = profiles.filter((p) => p.id !== "poly-ai");
+  const isFirstThreeRegistered = registeredHumans
+    .slice(0, 3)
+    .some((p) => p.id === currentUser.id);
+  const isUserAdmin =
+    isFirstThreeRegistered ||
+    currentUser.email.toLowerCase() === "kamyavince@gmail.com";
 
   if (isUserAdmin) {
     menuItems.push({ id: "admin", label: "Admin Sceptre", icon: Shield });
   }
 
   return (
-    <aside className="w-64 hidden md:flex flex-col h-[calc(100vh-62px)] sticky top-[62px] border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-black/40 p-4 justify-between transition-colors duration-300">
-      
+    <aside className="w-64 hidden md:flex flex-col h-[calc(100vh-62px)] sticky top-15.5 border-r border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-black/40 p-4 justify-between transition-colors duration-300">
       {/* Upper Navigation */}
       <div className="space-y-1">
         {/* Connection status card */}
-        <div className="p-4 mb-4 rounded-2xl bg-gradient-to-br from-red-500/10 to-orange-500/10 border border-red-500/10 dark:border-red-500/15">
+        <div className="p-4 mb-4 rounded-2xl bg-linear-to-br from-red-500/10 to-orange-500/10 border border-red-500/10 dark:border-red-500/15">
           <div className="flex items-center space-x-3">
             <div className="relative">
               <img
@@ -66,13 +69,17 @@ export default function Sidebar() {
               </p>
             </div>
           </div>
-          
+
           {/* Active subscription tier tag */}
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-[9px] font-mono font-bold tracking-widest uppercase bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-              {currentUser.subscription_tier ? `${currentUser.subscription_tier} Tier` : (currentUser.email.toLowerCase().includes("pro") ? "Pro Tier" : "Free Explorer")}
+            <span className="text-[9px] font-mono font-bold tracking-widest uppercase bg-linear-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+              {currentUser.subscription_tier
+                ? `${currentUser.subscription_tier} Tier`
+                : currentUser.email.toLowerCase().includes("pro")
+                  ? "Pro Tier"
+                  : "Free Explorer"}
             </span>
-            <button 
+            <button
               onClick={() => setView("settings")}
               className="text-[9px] font-mono text-neutral-400 hover:text-orange-500 transition underline underline-offset-2"
             >
@@ -92,13 +99,18 @@ export default function Sidebar() {
                 onClick={() => setView(item.id)}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left text-sm font-medium transition duration-300 transform outline-none border border-transparent ${
                   isActive
-                    ? item.accent 
-                      ? "bg-gradient-to-r from-yellow-500/15 to-orange-500/15 text-yellow-600 dark:text-yellow-400 border-yellow-500/20 shadow-sm"
-                      : "bg-gradient-to-r from-red-500/10 to-orange-500/10 text-red-600 dark:text-orange-400 border-red-500/10 dark:border-red-500/15 font-semibold"
+                    ? item.accent
+                      ? "bg-linear-to-r from-yellow-500/15 to-orange-500/15 text-yellow-600 dark:text-yellow-400 border-yellow-500/20 shadow-sm"
+                      : "bg-linear-to-r from-red-500/10 to-orange-500/10 text-red-600 dark:text-orange-400 border-red-500/10 dark:border-red-500/15 font-semibold"
                     : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900/60"
                 }`}
               >
-                <Icon size={18} className={isActive ? "text-red-500 dark:text-orange-400" : ""} />
+                <Icon
+                  size={18}
+                  className={
+                    isActive ? "text-red-500 dark:text-orange-400" : ""
+                  }
+                />
                 <span className="tracking-wide">{item.label}</span>
               </button>
             );
@@ -119,7 +131,6 @@ export default function Sidebar() {
           Palrene v1.4.0 • Built for connection
         </p>
       </div>
-
     </aside>
   );
 }

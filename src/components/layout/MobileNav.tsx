@@ -1,16 +1,28 @@
 import React from "react";
 import { useStore } from "../../store";
-import { Home, Compass, Bell, Search, User, Sparkles, Shield } from "lucide-react";
+import {
+  Home,
+  Compass,
+  Bell,
+  Search,
+  User,
+  Sparkles,
+  Shield,
+} from "lucide-react";
 
 export default function MobileNav() {
   const { currentView, setView, currentUser, profiles } = useStore();
 
   if (!currentUser) return null;
 
-  const dynamicProfile = profiles?.find(p => p.id === currentUser.id);
-  const registeredHumans = (profiles || []).filter(p => p.id !== "poly-ai");
-  const isFirstThreeRegistered = registeredHumans.slice(0, 3).some(p => p.id === currentUser?.id);
-  const isUserAdmin = isFirstThreeRegistered || currentUser.email.toLowerCase() === "kamyavince@gmail.com";
+  const dynamicProfile = profiles?.find((p) => p.id === currentUser.id);
+  const registeredHumans = (profiles || []).filter((p) => p.id !== "poly-ai");
+  const isFirstThreeRegistered = registeredHumans
+    .slice(0, 3)
+    .some((p) => p.id === currentUser?.id);
+  const isUserAdmin =
+    isFirstThreeRegistered ||
+    currentUser.email.toLowerCase() === "kamyavince@gmail.com";
 
   const navItems = [
     { id: "home", label: "Home", icon: Home },
@@ -29,25 +41,29 @@ export default function MobileNav() {
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = currentView === item.id;
-        
+
         return (
           <button
             key={item.id}
             onClick={() => setView(item.id)}
             className="flex flex-col items-center justify-center space-y-0.5 outline-none transition group"
           >
-            <div className={`p-1.5 rounded-full transition-all duration-300 ${
-              isActive 
-                ? "bg-gradient-to-r from-red-500/10 to-orange-500/10 text-red-500 dark:text-orange-400 scale-102"
-                : "text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-white"
-            }`}>
+            <div
+              className={`p-1.5 rounded-full transition-all duration-300 ${
+                isActive
+                  ? "bg-linear-to-r from-red-500/10 to-orange-500/10 text-red-500 dark:text-orange-400 scale-102"
+                  : "text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-800 dark:group-hover:text-white"
+              }`}
+            >
               <Icon size={18} />
             </div>
-            <span className={`text-[9px] tracking-wide transition-colors ${
-              isActive 
-                ? "font-bold text-red-500 dark:text-orange-400" 
-                : "text-neutral-500 dark:text-neutral-400"
-            }`}>
+            <span
+              className={`text-[9px] tracking-wide transition-colors ${
+                isActive
+                  ? "font-bold text-red-500 dark:text-orange-400"
+                  : "text-neutral-500 dark:text-neutral-400"
+              }`}
+            >
               {item.label}
             </span>
           </button>

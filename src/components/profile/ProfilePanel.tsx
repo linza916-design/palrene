@@ -1,29 +1,29 @@
 import React, { useState } from "react";
 import { useStore } from "../../store";
 import { motion } from "motion/react";
-import { 
-  Camera, 
-  MapPin, 
-  Settings, 
-  Award, 
-  Heart, 
-  Users, 
+import {
+  Camera,
+  MapPin,
+  Settings,
+  Award,
+  Heart,
+  Users,
   Eye,
   Plus,
   Compass,
-  FileCheck
+  FileCheck,
 } from "lucide-react";
 import VerificationModal from "../modals/VerificationModal";
 import PostCard from "../feed/PostCard";
 
 export default function ProfilePanel() {
-  const { 
-    currentUser, 
-    profiles, 
-    posts, 
-    updateProfileSettings, 
-    toggleFollow, 
-    setView 
+  const {
+    currentUser,
+    profiles,
+    posts,
+    updateProfileSettings,
+    toggleFollow,
+    setView,
   } = useStore();
 
   const [verifyOpen, setVerifyOpen] = useState(false);
@@ -36,16 +36,16 @@ export default function ProfilePanel() {
   const viewProfileId = localStorage.getItem("palrene_view_profile_id");
   const isSelf = !viewProfileId || viewProfileId === currentUser?.id;
 
-  const targetProfile = isSelf 
-    ? currentUser 
-    : profiles.find(p => p.id === viewProfileId) || currentUser;
+  const targetProfile = isSelf
+    ? currentUser
+    : profiles.find((p) => p.id === viewProfileId) || currentUser;
 
   const handleSave = () => {
     if (!currentUser) return;
     updateProfileSettings({
       full_name: nameVal,
       bio: bioVal,
-      location: locVal
+      location: locVal,
     });
     setEditMode(false);
   };
@@ -63,13 +63,15 @@ export default function ProfilePanel() {
 
   return (
     <div className="flex-1 h-[calc(100vh-62px)] overflow-y-auto pb-c-safe text-left">
-      
       {/* Upper Banner Image and Avatar Overlay card */}
       <div className="relative">
-        <div className="h-44 w-full bg-cover bg-center overflow-hidden bg-gradient-to-r from-red-850 via-rose-950 to-orange-950">
-          <img 
-            src={targetProfile.banner_url || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80"} 
-            alt="Profile Banner backdrop" 
+        <div className="h-44 w-full bg-cover bg-center overflow-hidden bg-linear-to-r from-red-850 via-rose-950 to-orange-950">
+          <img
+            src={
+              targetProfile.banner_url ||
+              "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80"
+            }
+            alt="Profile Banner backdrop"
             className="w-full h-full object-cover opacity-60"
           />
         </div>
@@ -99,7 +101,7 @@ export default function ProfilePanel() {
                 </button>
                 <button
                   onClick={() => toggleFollow(targetProfile.id)}
-                  className="px-4 py-2 text-xs font-mono font-bold text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-xl"
+                  className="px-4 py-2 text-xs font-mono font-bold text-white bg-linear-to-r from-red-500 to-orange-500 rounded-xl"
                 >
                   Follow
                 </button>
@@ -114,7 +116,7 @@ export default function ProfilePanel() {
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-5 py-2 text-xs font-mono font-bold text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-xl shadow"
+                  className="px-5 py-2 text-xs font-mono font-bold text-white bg-linear-to-r from-red-500 to-orange-500 rounded-xl shadow"
                 >
                   Save Settings
                 </button>
@@ -131,7 +133,7 @@ export default function ProfilePanel() {
                     <span>Verify Identity</span>
                   </button>
                 )}
-                
+
                 <button
                   onClick={() => {
                     setNameVal(targetProfile.full_name);
@@ -155,7 +157,9 @@ export default function ProfilePanel() {
         {editMode ? (
           <div className="p-4 bg-neutral-50 dark:bg-zinc-900/60 border border-neutral-150 rounded-2xl space-y-3">
             <div className="space-y-1">
-              <span className="text-[10px] font-mono text-neutral-400">Full Display Name</span>
+              <span className="text-[10px] font-mono text-neutral-400">
+                Full Display Name
+              </span>
               <input
                 type="text"
                 value={nameVal}
@@ -165,7 +169,9 @@ export default function ProfilePanel() {
             </div>
 
             <div className="space-y-1">
-              <span className="text-[10px] font-mono text-neutral-400">Personal Bio</span>
+              <span className="text-[10px] font-mono text-neutral-400">
+                Personal Bio
+              </span>
               <textarea
                 value={bioVal}
                 onChange={(e) => setBioVal(e.target.value)}
@@ -174,7 +180,9 @@ export default function ProfilePanel() {
             </div>
 
             <div className="space-y-1">
-              <span className="text-[10px] font-mono text-neutral-400">City location</span>
+              <span className="text-[10px] font-mono text-neutral-400">
+                City location
+              </span>
               <input
                 type="text"
                 value={locVal}
@@ -195,7 +203,9 @@ export default function ProfilePanel() {
               )}
             </h1>
 
-            <p className="text-xs text-neutral-400 font-mono">@{targetProfile.username}</p>
+            <p className="text-xs text-neutral-400 font-mono">
+              @{targetProfile.username}
+            </p>
 
             {targetProfile.location && (
               <span className="flex items-center gap-1 text-[11px] text-neutral-500 font-serif">
@@ -205,7 +215,10 @@ export default function ProfilePanel() {
             )}
 
             <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 italic pt-2 font-serif leading-relaxed whitespace-pre-wrap">
-              "{targetProfile.bio || 'Navigating connections without boundaries.'}"
+              "
+              {targetProfile.bio ||
+                "Navigating connections without boundaries."}
+              "
             </p>
           </div>
         )}
@@ -213,27 +226,46 @@ export default function ProfilePanel() {
         {/* Followers / Views stats banner row */}
         <div className="flex border-y border-neutral-150/45 dark:border-neutral-900/60 py-3.5 justify-around text-center text-xs font-mono">
           <div>
-            <span className="text-sm font-bold text-neutral-800 dark:text-white block">{targetProfile.followers_count || 0}</span>
-            <span className="text-[10px] text-neutral-400 uppercase">Followers</span>
+            <span className="text-sm font-bold text-neutral-800 dark:text-white block">
+              {targetProfile.followers_count || 0}
+            </span>
+            <span className="text-[10px] text-neutral-400 uppercase">
+              Followers
+            </span>
           </div>
           <div className="w-px bg-neutral-150 dark:bg-neutral-900/60" />
           <div>
-            <span className="text-sm font-bold text-neutral-800 dark:text-white block">{targetProfile.following_count || 0}</span>
-            <span className="text-[10px] text-neutral-400 uppercase">Following</span>
+            <span className="text-sm font-bold text-neutral-800 dark:text-white block">
+              {targetProfile.following_count || 0}
+            </span>
+            <span className="text-[10px] text-neutral-400 uppercase">
+              Following
+            </span>
           </div>
           <div className="w-px bg-neutral-150 dark:bg-neutral-900/60" />
           <div>
-            <span className="text-sm font-bold text-neutral-800 dark:text-white block">{targetProfile.views_count || 1}</span>
-            <span className="text-[10px] text-neutral-400 uppercase">Energy Views</span>
+            <span className="text-sm font-bold text-neutral-800 dark:text-white block">
+              {targetProfile.views_count || 1}
+            </span>
+            <span className="text-[10px] text-neutral-400 uppercase">
+              Energy Views
+            </span>
           </div>
         </div>
 
         {/* Interests & Goals List panels */}
         <div className="space-y-1 text-left">
-          <span className="text-[10px] font-mono text-neutral-400 uppercase">Resonant Interests alignment</span>
+          <span className="text-[10px] font-mono text-neutral-400 uppercase">
+            Resonant Interests alignment
+          </span>
           <div className="flex gap-2 flex-wrap">
-            {(targetProfile.interests || ["music", "relationships", "science"]).map((int) => (
-              <span key={int} className="px-2.5 py-1 text-[10px] font-mono bg-neutral-50 dark:bg-zinc-950 border border-neutral-150/50 dark:border-neutral-850 text-neutral-500 dark:text-neutral-440 rounded-xl">
+            {(
+              targetProfile.interests || ["music", "relationships", "science"]
+            ).map((int) => (
+              <span
+                key={int}
+                className="px-2.5 py-1 text-[10px] font-mono bg-neutral-50 dark:bg-zinc-950 border border-neutral-150/50 dark:border-neutral-850 text-neutral-500 dark:text-neutral-440 rounded-xl"
+              >
                 #{int}
               </span>
             ))}
@@ -242,16 +274,17 @@ export default function ProfilePanel() {
 
         {/* Seeker Post History list */}
         <div className="pt-4 space-y-4">
-          <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 dark:border-neutral-900 pb-2">Resonance History Timeline</h3>
+          <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-100 dark:border-neutral-900 pb-2">
+            Resonance History Timeline
+          </h3>
           {authorPosts.length === 0 ? (
-            <p className="text-xs text-neutral-400 font-mono text-center py-12">This seeker hasn't released ripples yet.</p>
+            <p className="text-xs text-neutral-400 font-mono text-center py-12">
+              This seeker hasn't released ripples yet.
+            </p>
           ) : (
-            authorPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))
+            authorPosts.map((post) => <PostCard key={post.id} post={post} />)
           )}
         </div>
-
       </div>
 
       {/* VERIFICATION MODAL MANUAL UPLOADING DIALOGUE */}
@@ -259,7 +292,6 @@ export default function ProfilePanel() {
         isOpen={verifyOpen}
         onClose={() => setVerifyOpen(false)}
       />
-
     </div>
   );
 }

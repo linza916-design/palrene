@@ -12,7 +12,9 @@ export default function GifModal({ isOpen, onClose, onSelect }: GifModalProps) {
   const [search, setSearch] = useState("");
   const [gifs, setGifs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const GIPHY_API_KEY = (import.meta as any).env?.VITE_GIPHY_API_KEY || "kZMxRXW1yiJqIrk3u7hzVLRjnVk7sFsl";
+  const GIPHY_API_KEY =
+    (import.meta as any).env?.VITE_GIPHY_API_KEY ||
+    "kZMxRXW1yiJqIrk3u7hzVLRjnVk7sFsl";
 
   useEffect(() => {
     if (!isOpen) return;
@@ -22,7 +24,9 @@ export default function GifModal({ isOpen, onClose, onSelect }: GifModalProps) {
   const fetchTrending = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=12&rating=g`);
+      const res = await fetch(
+        `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=12&rating=g`,
+      );
       const data = await res.json();
       setGifs(data.data || []);
     } catch (e) {
@@ -41,7 +45,9 @@ export default function GifModal({ isOpen, onClose, onSelect }: GifModalProps) {
     }
     setLoading(true);
     try {
-      const res = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(search)}&limit=12&rating=g`);
+      const res = await fetch(
+        `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(search)}&limit=12&rating=g`,
+      );
       const data = await res.json();
       setGifs(data.data || []);
     } catch (e) {
@@ -65,9 +71,9 @@ export default function GifModal({ isOpen, onClose, onSelect }: GifModalProps) {
     return urls.map((url, i) => ({
       id: `fallback_${i}`,
       images: {
-        fixed_height: { url }
+        fixed_height: { url },
       },
-      title: `${query || 'emotional'} gif`
+      title: `${query || "emotional"} gif`,
     }));
   };
 
@@ -83,7 +89,7 @@ export default function GifModal({ isOpen, onClose, onSelect }: GifModalProps) {
           >
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-neutral-800 bg-neutral-950/40">
-              <h3 className="text-lg font-medium text-white font-sans bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
+              <h3 className="text-lg font-medium text-white font-sans bg-clip-text bg-linear-to-r from-orange-400 to-red-500">
                 Pick a GIPHY Emotion
               </h3>
               <button
@@ -95,7 +101,10 @@ export default function GifModal({ isOpen, onClose, onSelect }: GifModalProps) {
             </div>
 
             {/* Search Input */}
-            <form onSubmit={handleSearch} className="p-4 border-b border-neutral-800 bg-neutral-900/60">
+            <form
+              onSubmit={handleSearch}
+              className="p-4 border-b border-neutral-800 bg-neutral-900/60"
+            >
               <div className="relative">
                 <input
                   type="text"
@@ -104,10 +113,13 @@ export default function GifModal({ isOpen, onClose, onSelect }: GifModalProps) {
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full py-2.5 pl-10 pr-4 text-sm text-white rounded-xl bg-neutral-950 border border-neutral-800 placeholder-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition"
                 />
-                <Search size={16} className="absolute left-3.5 top-3.5 text-neutral-500" />
+                <Search
+                  size={16}
+                  className="absolute left-3.5 top-3.5 text-neutral-500"
+                />
                 <button
                   type="submit"
-                  className="absolute right-2.5 top-2.5 px-3 py-1 text-xs text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-lg hover:from-red-600 hover:to-orange-600"
+                  className="absolute right-2.5 top-2.5 px-3 py-1 text-xs text-white bg-linear-to-r from-red-500 to-orange-500 rounded-lg hover:from-red-600 hover:to-orange-600"
                 >
                   Seek
                 </button>
@@ -115,11 +127,13 @@ export default function GifModal({ isOpen, onClose, onSelect }: GifModalProps) {
             </form>
 
             {/* Results Grid */}
-            <div className="p-4 overflow-y-auto max-h-[350px]">
+            <div className="p-4 overflow-y-auto max-h-87.5">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-16 space-y-3">
                   <Loader className="w-8 h-8 text-orange-500 animate-spin" />
-                  <p className="text-xs text-neutral-400 font-mono">Fibrillating channels...</p>
+                  <p className="text-xs text-neutral-400 font-mono">
+                    Fibrillating channels...
+                  </p>
                 </div>
               ) : gifs.length === 0 ? (
                 <div className="py-12 text-center text-sm text-neutral-500">
@@ -144,7 +158,7 @@ export default function GifModal({ isOpen, onClose, onSelect }: GifModalProps) {
                         className="object-cover w-full h-full pointer-events-none"
                         referrerPolicy="no-referrer"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                      <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
                         <span className="text-[10px] text-white/90 truncate font-mono">
                           {gif.title || "Giphy"}
                         </span>

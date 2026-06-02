@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
@@ -12,16 +13,27 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+
+  const PORT = Number(process.env.PORT) || 3000;
+
+  const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
+
+  app.use(
+    cors({
+      origin: APP_URL,
+      credentials: true,
+    }),
+  );
 
   app.use(express.json());
 
-  // Initialize Gemini Client
   const apiKey = process.env.GEMINI_API_KEY;
+
   let ai: GoogleGenAI | null = null;
+
   if (apiKey) {
     ai = new GoogleGenAI({
-      apiKey: apiKey,
+      apiKey,
       httpOptions: {
         headers: {
           "User-Agent": "aistudio-build",
@@ -29,37 +41,43 @@ async function startServer() {
       },
     });
   } else {
-    console.warn("GEMINI_API_KEY not found in environment variables.");
+    console.warn("GEMINI_API_KEY not found.");
   }
 
-  // API Route: Poly AI Chat
+  // ===== HEALTH CHECK =====
+
+  app.get("/api/health", (_, res) => {
+    res.json({
+      status: "ok",
+      appUrl: APP_URL,
+      environment: process.env.NODE_ENV,
+    });
+  });
+
+  // ===== POLY CHAT =====
+
   app.post("/api/poly/chat", async (req, res) => {
     try {
       if (!ai) {
-        return res
-          .status(500)
-          .json({ error: "Gemini AI is not configured on this server." });
+        return res.status(500).json({
+          error: "Gemini AI is not configured.",
+        });
       }
 
       const { message, history } = req.body;
+
       if (!message) {
-        return res.status(400).json({ error: "Message is required." });
+        return res.status(400).json({
+          error: "Message is required.",
+        });
       }
 
-      // Convert history to components suitable for Gemini API
-      // If history is provided, compile them nicely
       const systemInstruction =
-        "You are 'Poly', the warm, luxurious, highly emotionally intelligent, and deeply supportive AI Relationship Assistant for the Palrene platform. " +
-        "Palrene is a relationship, friendship, dating, and community discovery platform. " +
-        "Your mission is to offer highly empathetic, thoughtful relationship advice, emotional support, and recommendations to help humans form authentic connections. " +
-        "Always sound warm, deeply genuine, wise, slightly poetic, and intelligent. " +
-        "You should help users communicate better, suggest creative ideas for dates or friend hangouts, and offer healing or calming support if they are feeling lonely or down. " +
-        "Keep your responses beautifully formatted in Markdown, focused, and conversational (avoid overly long explanations unless asked).";
+        "You are Poly, the AI relationship assistant for Palrene.";
 
       const formattedContents: any[] = [];
 
-      // Append history
-      if (history && Array.isArray(history)) {
+      if (Array.isArray(history)) {
         history.forEach((h: any) => {
           formattedContents.push({
             role: h.role === "assistant" ? "model" : "user",
@@ -68,7 +86,6 @@ async function startServer() {
         });
       }
 
-      // Append current message
       formattedContents.push({
         role: "user",
         parts: [{ text: message }],
@@ -78,156 +95,154 @@ async function startServer() {
         model: "gemini-2.5-flash",
         contents: formattedContents,
         config: {
-          systemInstruction: systemInstruction,
+          systemInstruction,
           temperature: 0.8,
         },
       });
 
-      const responseText =
-        response.text || "I am reflecting on your thoughts. Let's dig deeper.";
-      res.json({ reply: responseText });
+      return res.json({
+        reply: response.text || "I'm reflecting on your thoughts.",
+      });
     } catch (error: any) {
-      console.error("Error in /api/poly/chat:", error);
-      res
-        .status(500)
-        .json({ error: error.message || "An error occurred with Poly AI." });
+      console.error(error);
+
+      return res.status(500).json({
+        error: error.message,
+      });
     }
   });
 
-  // API Route: AI Reply Suggester for messenger
+  // ===== POLY SUGGEST REPLY =====
+
   app.post("/api/poly/suggest-reply", async (req, res) => {
     try {
       if (!ai) {
-        return res
-          .status(500)
-          .json({ error: "Gemini AI is not configured on this server." });
+        return res.status(500).json({
+          error: "Gemini AI is not configured.",
+        });
       }
 
       const { recipientName, lastMessages } = req.body;
-      if (!lastMessages || !Array.isArray(lastMessages)) {
-        return res
-          .status(400)
-          .json({ error: "List of last messages is required." });
+
+      if (!Array.isArray(lastMessages)) {
+        return res.status(400).json({
+          error: "lastMessages is required.",
+        });
       }
 
       const contextText = lastMessages
         .map((m: any) => `${m.sender_name || "Them"}: ${m.content}`)
         .join("\n");
-      const prompt = `Based on the following short message history with ${recipientName || "a contact"}, suggest 3 diverse, highly charming, and tailored reply options that sound natural, witty, or supportive. Format the response as a JSON array of strings only.
-      
-Messages:
-${contextText}
-
-Return JSON of form: ["Option 1", "Option 2", "Option 3"]`;
 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: prompt,
+        contents: `Suggest 3 replies for ${recipientName || "contact"}.
+
+${contextText}`,
         config: {
           responseMimeType: "application/json",
           temperature: 0.7,
         },
       });
 
-      const text = response.text || "[]";
       try {
-        const parsed = JSON.parse(text);
-        res.json({ suggestions: parsed });
+        return res.json({
+          suggestions: JSON.parse(response.text || "[]"),
+        });
       } catch {
-        res.json({
+        return res.json({
           suggestions: [
             "That sounds lovely!",
-            "Wow, tell me more about it!",
-            "I'd love to chat more!",
+            "Tell me more.",
+            "I'd love to hear about it.",
           ],
         });
       }
     } catch (error: any) {
-      console.error("Error in /api/poly/suggest-reply:", error);
-      res.status(500).json({
-        error: error.message || "An error occurred generating sugestions.",
+      return res.status(500).json({
+        error: error.message,
       });
     }
   });
 
-  // API Route: Relationship match recommendations based on interests and goals
+  // ===== POLY RECOMMEND =====
+
   app.post("/api/poly/recommend", async (req, res) => {
     try {
       if (!ai) {
-        return res
-          .status(500)
-          .json({ error: "Gemini AI is not configured on this server." });
+        return res.status(500).json({
+          error: "Gemini AI is not configured.",
+        });
       }
 
-      const { interests, goals, currentBio } = req.body;
-      const prompt = `Given a user with interests: [${(interests || []).join(", ")}], connection goals: [${(goals || []).join(", ")}], and bio: "${currentBio || ""}", generate a warm, premium list of custom relationship/interaction recommendations.
-      This includes:
-      1. One custom creative prompt/icebreaker to use on their profile.
-      2. Recommended types of subgroups or communities to seek.
-      3. A weekly "connection goal" or mindfully-spirited task.
-      
-      Respond directly in a clean JSON object format:
-      {
-        "icebreaker": "string",
-        "recommended_groups": ["string 1", "string 2"],
-        "connection_task": "string",
-        "intro_message": "string"
-      }`;
+      const { interests = [], goals = [], currentBio = "" } = req.body;
 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: prompt,
+        contents: `
+Interests: ${interests.join(", ")}
+
+Goals: ${goals.join(", ")}
+
+Bio: ${currentBio}
+
+Return JSON recommendations.
+        `,
         config: {
           responseMimeType: "application/json",
           temperature: 0.7,
         },
       });
 
-      const text = response.text || "{}";
       try {
-        const parsed = JSON.parse(text);
-        res.json(parsed);
+        return res.json(JSON.parse(response.text || "{}"));
       } catch {
-        res.json({
-          icebreaker:
-            "What's a song that immediately takes you back to a specific sunset in your life?",
-          recommended_groups: [
-            "Acoustic Sessions",
-            "Deep Dialogue",
-            "Wanderlust Chronicles",
-          ],
-          connection_task:
-            "Ask someone about a skill they have that they're secretly proud of, rather than what they do for a living.",
-          intro_message:
-            "Here are some personal connection rituals curated by Poly.",
+        return res.json({
+          icebreaker: "What's a memory that still makes you smile?",
+          recommended_groups: ["Deep Conversations", "Adventure Seekers"],
+          connection_task: "Start one meaningful conversation this week.",
+          intro_message: "Personal recommendations from Poly.",
         });
       }
     } catch (error: any) {
-      console.error("Error in /api/poly/recommend:", error);
-      res.status(500).json({
-        error: error.message || "An error occurred with recommendations.",
+      return res.status(500).json({
+        error: error.message,
       });
     }
   });
 
-  // Vite development server setup
+  // ===== VITE =====
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+      },
       appType: "spa",
     });
+
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
+
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+
+    app.get("*", (_, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Palrene Startup] Server running on http://localhost:${PORT}`);
+    console.log(`
+=================================
+Palrene Server Started
+=================================
+Environment: ${process.env.NODE_ENV}
+Port: ${PORT}
+URL: ${APP_URL}
+=================================
+`);
   });
 }
 
-startServer();
+startServer().catch(console.error);
