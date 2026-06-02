@@ -56,10 +56,11 @@ export default async function handler(req: any, res: any) {
       reply: response.text || "I'm reflecting on your thoughts.",
     });
   } catch (error: any) {
-    console.error(error);
+    console.error("POLY CHAT ERROR:", error);
 
     return res.status(500).json({
-      error: error.message,
+      error: error?.message || "Unknown error",
+      stack: error?.stack,
     });
   }
 }
