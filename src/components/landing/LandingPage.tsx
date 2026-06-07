@@ -4,6 +4,8 @@ const ReactPlayerComponent = ReactPlayer as any;
 import { useStore } from "../../store";
 import { motion, AnimatePresence } from "motion/react";
 import CustomSoundCloudPlayer from "../home/CustomSoundCloudPlayer";
+import { features } from "../../data/landing/features";
+import FeatureCard from "./FeatureCard";
 
 import {
   Play,
@@ -30,9 +32,49 @@ import {
   ExternalLink,
 } from "lucide-react";
 import AuthModal from "../modals/AuthModal";
+import Footer from "./Footer";
+import TestimonialsSection from "./testimonials/TestimonialsSection";
+import AuthCard from "../auth/AuthCard";
+import { supabase } from "@/src/lib/supabase";
 
 export default function LandingPage() {
   const { login, signup, registrationStep } = useStore();
+
+  {
+    /*real login functionality */
+  }
+  const handleLogin = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    console.log("Logged in:", data.user);
+  };
+
+  {
+    /*real signup functionality */
+  }
+  const handleSignup = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    console.log("Signed up:", data.user);
+
+    setPlaying(false);
+
+    setAuthOpen(true);
+  };
 
   // 1. Audio controls: start as false to comply with browser autoplay policies!
   const [playing, setPlaying] = useState(false);
@@ -65,19 +107,33 @@ export default function LandingPage() {
 
   const slides = [
     {
-      title: "Soulful Friendships",
-      desc: "Meet travelers, astrophysicists, and vinyl collectors on similar wavelengths.",
-      img: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1000&auto=format&fit=crop&q=80",
+      title: "Meet Extraordinary People",
+      desc: "Form authentic friendships with ambitious, creative, and inspiring individuals.",
+      img: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1000&auto=format&fit=crop&q=80",
     },
+
     {
-      title: "Luxurious Romance",
-      desc: "Experience dating refined into a quiet, warm cinematic canvas.",
-      img: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=1000&auto=format&fit=crop&q=80",
+      title: "Love Beyond Limits",
+      desc: "Find meaningful romantic connections rooted in understanding and genuine chemistry.",
+      img: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=1000&auto=format&fit=crop&q=80",
     },
+
     {
-      title: "Borderless Tribes",
-      desc: "Find deep-spirited channels for philosophy, late-night tea, and quantum physics.",
-      img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1000&auto=format&fit=crop&q=80",
+      title: "Heal & Grow Together",
+      desc: "Navigate relationship challenges with insights, support, and guided conversations.",
+      img: "https://images.unsplash.com/photo-1511988617509-a57c8a288659?w=1000&auto=format&fit=crop&q=80",
+    },
+
+    {
+      title: "Connect Across the World",
+      desc: "Build friendships, partnerships, and communities that transcend distance.",
+      img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1000&auto=format&fit=crop&q=80",
+    },
+
+    {
+      title: "Relationships Without Boundaries",
+      desc: "One platform for friendship, dating, mentorship, networking, and human connection.",
+      img: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=1000&auto=format&fit=crop&q=80",
     },
   ];
 
@@ -183,12 +239,14 @@ export default function LandingPage() {
       {/* 4. Sticky top-level luxury bar with BRAND name & Create Account button */}
       <header className="sticky top-0 z-40 w-full bg-white/85 dark:bg-black/85 backdrop-blur-md border-b border-neutral-100 dark:border-neutral-900 px-6 py-3.5 flex items-center justify-between">
         <div className="flex items-center space-x-2.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-linear-to-r from-red-500 to-orange-500 animate-pulse" />
+          <span className="w-2.5 h-2.5 rounded-full bg-linear-to-r from-pink-500 via-red-500 to-orange-500 animate-pulse" />
+
           <h1 className="text-xl font-serif font-bold text-neutral-900 dark:text-white tracking-tight">
             Palrene
           </h1>
-          <span className="text-[9px] font-mono uppercase bg-neutral-100 dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 text-neutral-500 px-1.5 py-0.5 rounded leading-none select-none">
-            Harbor
+
+          <span className="text-[9px] font-mono uppercase bg-neutral-100 dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 text-neutral-500 px-1.5 py-0.5 rounded leading-none">
+            Relationships Without Boundaries
           </span>
         </div>
 
@@ -204,7 +262,7 @@ export default function LandingPage() {
           }}
           className="px-4.5 py-2 border border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-150 font-mono text-[10px] font-bold uppercase tracking-wider rounded-xl hover:border-orange-500 hover:text-orange-500 dark:hover:text-orange-400 hover:bg-neutral-50 dark:hover:bg-zinc-900 transition"
         >
-          Create Account
+          Find Your People
         </button>
       </header>
 
@@ -336,391 +394,33 @@ export default function LandingPage() {
             The Palrene Architecture
           </span>
           <h2 className="text-3xl font-serif font-bold text-neutral-900 dark:text-white tracking-tight">
-            Redefining human intimacy, intelligently
+            Built for human connection
           </h2>
+
           <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-            Palrene is a luxurious, modern fusion of networking, romance, and
-            customized community circles, guided by our emotional twin assistant
-            AI companion, Poly.
+            One place to meet people, strengthen relationships, discover
+            communities, and create lasting connections.
           </p>
         </div>
 
         {/* Dynamic modular cards with images, details, and micro-hover animations */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-          {/* Card 1 */}
-          <motion.div
-            whileHover={{ y: -6, scale: 1.01 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="group flex flex-col bg-neutral-50 dark:bg-zinc-950 border border-neutral-100 dark:border-zinc-900 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition text-left"
-          >
-            <div className="h-48 overflow-hidden relative">
-              <img
-                src="https://images.unsplash.com/photo-1543807535-eceef0bc6599?w=600&auto=format&fit=crop&q=80"
-                alt="Intimacy Waves"
-                loading="lazy"
-                className="w-full h-full object-cover group-hover:scale-105 transition duration-700 brightness-95"
-              />
-              <span className="absolute top-3 left-3 px-2 py-0.5 bg-black/50 backdrop-blur-md rounded-lg text-[9px] font-mono text-white tracking-wider uppercase">
-                Authentic matches
-              </span>
-            </div>
-            <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/10">
-                    <Heart size={14} className="fill-current" />
-                  </div>
-                  <h3 className="text-md font-serif font-bold text-neutral-900 dark:text-white leading-none">
-                    Warm Romance, Redefined
-                  </h3>
-                </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                  No swiping cascades or rating fatigue. We replace standard
-                  superficial metrics with aligned deep-spirited connection
-                  threads, designed purely for quiet communication.
-                </p>
-              </div>
-              <div className="pt-2 font-mono text-[10px] text-neutral-450 dark:text-neutral-500 flex items-center gap-1">
-                <span>Core Module</span>
-                <span>•</span>
-                <span>Secure Validation</span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Card 2 */}
-          <motion.div
-            whileHover={{ y: -6, scale: 1.01 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="group flex flex-col bg-neutral-50 dark:bg-zinc-950 border border-neutral-100 dark:border-zinc-900 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition text-left"
-          >
-            <div className="h-48 overflow-hidden relative">
-              <img
-                src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&auto=format&fit=crop&q=80"
-                alt="Poly AI Companion"
-                loading="lazy"
-                className="w-full h-full object-cover group-hover:scale-105 transition duration-700 brightness-95"
-              />
-              <span className="absolute top-3 left-3 px-2 py-0.5 bg-orange-500 text-[9px] font-mono text-white tracking-wider uppercase font-bold">
-                Emotion Engine
-              </span>
-            </div>
-            <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center border border-orange-500/10">
-                    <Sparkles size={14} />
-                  </div>
-                  <h3 className="text-md font-serif font-bold text-neutral-900 dark:text-white leading-none">
-                    Empathy-Guided AI Assistant
-                  </h3>
-                </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                  Let Poly guide your dialogues, suggest beautiful local date
-                  configurations, draft smart initial whisper concepts, and
-                  align deep emotional support variables.
-                </p>
-              </div>
-              <div className="pt-2 font-mono text-[10px] text-neutral-450 dark:text-neutral-500 flex items-center gap-1">
-                <span>Gemini API Powered</span>
-                <span>•</span>
-                <span>Real-time Sync</span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Card 3 */}
-          <motion.div
-            whileHover={{ y: -6, scale: 1.01 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="group flex flex-col bg-neutral-50 dark:bg-zinc-950 border border-neutral-100 dark:border-zinc-900 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition text-left"
-          >
-            <div className="h-48 overflow-hidden relative">
-              <img
-                src="https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?w=600&auto=format&fit=crop&q=80"
-                alt="Connective Circles"
-                loading="lazy"
-                className="w-full h-full object-cover group-hover:scale-105 transition duration-700 brightness-95"
-              />
-              <span className="absolute top-3 left-3 px-2 py-0.5 bg-black/50 backdrop-blur-md rounded-lg text-[9px] font-mono text-white tracking-wider uppercase">
-                Subgroups
-              </span>
-            </div>
-            <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-lg bg-yellow-500/10 text-yellow-500 flex items-center justify-center border border-yellow-500/10">
-                    <Users size={14} />
-                  </div>
-                  <h3 className="text-md font-serif font-bold text-neutral-900 dark:text-white leading-none">
-                    Subgroup Circles & Tribes
-                  </h3>
-                </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                  Filter into deep-spirited circles for acoustic vinyl beats,
-                  philosophical tea-pouring, astrophysics debates, and mutual
-                  creative reinforcement networks.
-                </p>
-              </div>
-              <div className="pt-2 font-mono text-[10px] text-neutral-450 dark:text-neutral-500 flex items-center gap-1">
-                <span>Offline-First Rooms</span>
-                <span>•</span>
-                <span>No Ads</span>
-              </div>
-            </div>
-          </motion.div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {features.map((feature) => (
+            <FeatureCard key={feature.title} {...feature} />
+          ))}
         </div>
       </section>
 
       {/* 2. AUTO-SCROLLING REVIEWS TESTIMONIALS SECTION */}
+
       {/* If reviews are zero we would use fallback data. Here we have robust data + auto-scrolling animations */}
-      <section className="bg-neutral-50/50 dark:bg-zinc-950/45 border-y border-neutral-100 dark:border-neutral-900 py-16 text-center overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 space-y-8">
-          <div className="space-y-2">
-            <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-orange-500 block">
-              Echoes of resonance
-            </span>
-            <h2 className="text-2xl font-serif font-bold text-neutral-900 dark:text-white tracking-tight">
-              What Seekers Inside Our Harbor Say
-            </h2>
-            <p className="text-xs text-neutral-400 max-w-md mx-auto">
-              Real testimonials from verified subscribers who discovered
-              borderless intimacy.
-            </p>
-          </div>
 
-          {/* Autoscrolling sliding focus block container */}
-          <div className="relative max-w-2xl mx-auto min-h-60 sm:min-h-47.5 w-full flex items-center justify-center">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={scrollIndex}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.7 }}
-                className="absolute w-full p-6 sm:p-8 bg-white dark:bg-neutral-950 border border-neutral-150 dark:border-neutral-900 rounded-3xl shadow-sm space-y-4 text-left"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <img
-                      src={reviews[scrollIndex].avatar}
-                      alt={reviews[scrollIndex].name}
-                      loading="lazy"
-                      className="w-10 h-10 rounded-full object-cover border border-neutral-250 dark:border-neutral-850"
-                    />
-                    <div>
-                      <h4 className="text-xs font-serif font-bold text-neutral-900 dark:text-white leading-tight">
-                        {reviews[scrollIndex].name}
-                      </h4>
-                      <p className="text-[10px] font-mono text-neutral-400">
-                        {reviews[scrollIndex].role}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-0.5 text-orange-500">
-                    <Heart size={9} className="fill-current" />
-                    <Heart size={9} className="fill-current" />
-                    <Heart size={9} className="fill-current" />
-                    <Heart size={9} className="fill-current" />
-                    <Heart size={9} className="fill-current" />
-                  </div>
-                </div>
-
-                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed italic font-serif">
-                  "{reviews[scrollIndex].text}"
-                </p>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Manual navigation indicators track */}
-          <div className="flex items-center justify-center space-x-1.5 pt-4">
-            {reviews.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setScrollIndex(idx)}
-                className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
-                  scrollIndex === idx
-                    ? "bg-orange-500 w-4"
-                    : "bg-neutral-300 dark:bg-neutral-800"
-                }`}
-                title={`Swipe to screen ${idx + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
+      <TestimonialsSection />
       {/* 5. BOTTOM REGISTRATION AREA - Handles login, sign in with Supabase, stops music and goes to progressive modal */}
-      <section
-        id="registration-section"
-        className="max-w-md w-full mx-auto py-20 px-6 scroll-mt-12"
-      >
-        <div className="bg-neutral-50 dark:bg-zinc-950 border border-neutral-150 dark:border-neutral-905 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 blur-3xl rounded-full" />
-
-          <div className="text-center space-y-1">
-            <span className="text-[9px] font-mono font-bold tracking-widest uppercase text-transparent bg-clip-text bg-linear-to-r from-red-500 to-orange-500">
-              Palrene Connection Portal
-            </span>
-            <h3 className="text-2xl font-serif font-bold text-neutral-900 dark:text-white">
-              {regMode === "signup"
-                ? "Create Infinite Connection"
-                : "Resonance Log In"}
-            </h3>
-            <p className="text-xs text-neutral-400">
-              {regMode === "signup"
-                ? "Begin the 8-step progressive profile setup."
-                : "Welcome back. Re-align to your secret socket."}
-            </p>
-          </div>
-
-          {/* Form tab selector toggle inline */}
-          <div className="flex bg-neutral-150/45 dark:bg-black/45 p-1 rounded-xl">
-            <button
-              onClick={() => {
-                setRegMode("signup");
-                setRegError("");
-              }}
-              className={`flex-1 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider rounded-lg transition ${
-                regMode === "signup"
-                  ? "bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white shadow-xs"
-                  : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-              }`}
-            >
-              Sign Up / Register
-            </button>
-            <button
-              onClick={() => {
-                setRegMode("login");
-                setRegError("");
-              }}
-              className={`flex-1 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider rounded-lg transition ${
-                regMode === "login"
-                  ? "bg-white dark:bg-zinc-900 text-neutral-900 dark:text-white shadow-xs"
-                  : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-              }`}
-            >
-              Log In
-            </button>
-          </div>
-
-          {regError && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-left text-xs text-red-600 dark:text-red-400 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 block shrink-0" />
-              <span>{regError}</span>
-            </div>
-          )}
-
-          {regSuccess && regMode === "signup" && (
-            <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-left text-xs text-green-600 dark:text-green-400">
-              Registration alignment successful! Progressive profiling is
-              initializing.
-            </div>
-          )}
-
-          <form
-            onSubmit={handleInlineAuthSubmit}
-            className="space-y-4 text-left"
-          >
-            <div className="space-y-1">
-              <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail
-                  size={14}
-                  className="absolute left-3.5 top-3 text-neutral-400"
-                />
-                <input
-                  type="email"
-                  required
-                  placeholder="seeker@resonance.com"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full py-2.5 pl-10 pr-4 text-xs rounded-xl border border-neutral-200 dark:border-neutral-850 bg-white dark:bg-black placeholder-neutral-400 focus:outline-none focus:border-orange-500 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 font-semibold flex justify-between">
-                <span>Secret Credential</span>
-              </label>
-              <div className="relative">
-                <Lock
-                  size={14}
-                  className="absolute left-3.5 top-3 text-neutral-400"
-                />
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••••••"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  className="w-full py-2.5 pl-10 pr-4 text-xs rounded-xl border border-neutral-200 dark:border-neutral-850 bg-white dark:bg-black placeholder-neutral-400 focus:outline-none focus:border-orange-500 dark:text-white"
-                />
-              </div>
-            </div>
-
-            {regMode === "signup" && (
-              <div className="space-y-1">
-                <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
-                  Confirm Secret Credential
-                </label>
-                <div className="relative">
-                  <Lock
-                    size={14}
-                    className="absolute left-3.5 top-3 text-neutral-400"
-                  />
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••••••"
-                    value={regConfirmPassword}
-                    onChange={(e) => setRegConfirmPassword(e.target.value)}
-                    className="w-full py-2.5 pl-10 pr-4 text-xs rounded-xl border border-neutral-200 dark:border-neutral-850 bg-white dark:bg-black placeholder-neutral-400 focus:outline-none focus:border-orange-500 dark:text-white"
-                  />
-                </div>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={regLoading}
-              className="w-full py-3 bg-linear-to-r from-red-500 to-orange-500 hover:from-red-650 hover:to-orange-555 text-white font-mono text-xs font-bold uppercase tracking-wider rounded-xl transition shadow-sm disabled:opacity-55 cursor-pointer flex items-center justify-center space-x-2"
-            >
-              {regLoading ? (
-                <span>Aligning coordinates...</span>
-              ) : (
-                <>
-                  <span>
-                    {regMode === "signup"
-                      ? "Resonate & Sign Up"
-                      : "Authenticate Access"}
-                  </span>
-                  <ArrowRight size={13} />
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-      </section>
+      <AuthCard onLogin={handleLogin} onSignup={handleSignup} />
 
       {/* FOOTER COOPERATIVE */}
-      <footer className="mt-auto py-12 border-t border-neutral-100 dark:border-neutral-900 text-center text-xs text-neutral-400 dark:text-neutral-600 font-mono space-y-4">
-        <div className="flex items-center justify-center space-x-4">
-          <span className="flex items-center gap-1">
-            <Shield size={12} /> Borderless Intimacy
-          </span>
-          <span>•</span>
-          <span className="flex items-center gap-1">
-            <Globe size={12} /> Soul-Searching Harbor
-          </span>
-        </div>
-        <p>© 2026 Palrene Corp. All boundaries dissolved.</p>
-      </footer>
+      <Footer />
 
       {/* 5. MULTI-STEP PROGRESSIVE ONBOARDING MODAL OVERLAY */}
       {/* isOpen handles both manually triggering it, and auto-opening it when store's registrationStep > 0 */}
