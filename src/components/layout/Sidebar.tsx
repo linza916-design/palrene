@@ -1,6 +1,18 @@
 import React from "react";
 import { useStore } from "../../store";
-import { Hop as Home, Compass, MessageCircle, Users, User, Bell, Search, Sparkles, Shield, Settings, LogOut } from "lucide-react";
+import {
+  Hop as Home,
+  Compass,
+  MessageCircle,
+  Users,
+  User,
+  Bell,
+  Search,
+  Sparkles,
+  Shield,
+  Settings,
+  LogOut,
+} from "lucide-react";
 import { motion } from "motion/react";
 
 export default function Sidebar() {
@@ -21,8 +33,12 @@ export default function Sidebar() {
   ];
 
   const registeredHumans = profiles.filter((p) => p.id !== "poly-ai");
-  const isFirstThreeRegistered = registeredHumans.slice(0, 3).some((p) => p.id === currentUser.id);
-  const isUserAdmin = isFirstThreeRegistered || currentUser.email.toLowerCase() === "kamyavince@gmail.com";
+  const isFirstThreeRegistered = registeredHumans
+    .slice(0, 3)
+    .some((p) => p.id === currentUser.id);
+  const isUserAdmin =
+    isFirstThreeRegistered ||
+    currentUser.email.toLowerCase() === "kamyavince@gmail.com";
 
   if (isUserAdmin) {
     menuItems.push({ id: "admin", label: "Admin", icon: Shield });
@@ -31,11 +47,11 @@ export default function Sidebar() {
   const tokenBalance = currentUser.token_balance || 0;
 
   return (
-    <aside className="w-60 hidden md:flex flex-col h-[calc(100vh-70px)] sticky top-[70px] border-r border-neutral-100 dark:border-neutral-900 bg-white dark:bg-zinc-950 p-3 justify-between transition-colors duration-300 overflow-y-auto">
+    <aside className="w-60 hidden md:flex flex-col h-[calc(100vh-70px)] sticky top-17.5 border-r border-neutral-100 dark:border-neutral-900 bg-white dark:bg-zinc-950 p-3 justify-between transition-colors duration-300 overflow-y-auto">
       {/* Upper Navigation */}
       <div className="space-y-1">
         {/* Profile compact card */}
-        <div className="mb-3 p-3.5 rounded-2xl bg-gradient-to-br from-red-500/8 to-orange-500/8 dark:from-red-500/12 dark:to-orange-500/12 border border-orange-500/10 dark:border-orange-500/15">
+        <div className="mb-3 p-3.5 rounded-2xl bg-linear-to-br from-red-500/8 to-orange-500/8 dark:from-red-500/12 dark:to-orange-500/12 border border-orange-500/10 dark:border-orange-500/15">
           <div className="flex items-center space-x-2.5 mb-3">
             <div className="relative shrink-0">
               <img
@@ -57,7 +73,7 @@ export default function Sidebar() {
 
           {/* Tier + token row */}
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[9px] font-mono font-bold uppercase tracking-widest bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+            <span className="text-[9px] font-mono font-bold uppercase tracking-widest bg-linear-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
               {currentUser.subscription_tier
                 ? `${currentUser.subscription_tier} Tier`
                 : "Free Explorer"}
@@ -85,8 +101,8 @@ export default function Sidebar() {
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm font-medium transition-all duration-200 outline-none ${
                   isActive
                     ? item.accent
-                      ? "bg-gradient-to-r from-yellow-500/15 to-orange-500/15 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20"
-                      : "bg-gradient-to-r from-red-500/10 to-orange-500/10 text-red-600 dark:text-orange-400 border border-red-500/10 dark:border-red-500/15 font-semibold"
+                      ? "bg-linear-to-r from-yellow-500/15 to-orange-500/15 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20"
+                      : "bg-linear-to-r from-red-500/10 to-orange-500/10 text-red-600 dark:text-orange-400 border border-red-500/10 dark:border-red-500/15 font-semibold"
                     : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900/60 border border-transparent"
                 }`}
                 whileHover={{ x: isActive ? 0 : 2 }}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { motion } from "motion/react";
 
 import { useStore } from "./store";
@@ -32,25 +33,38 @@ import PostDetail from "./components/feed/PostDetail";
 
 function GlobalBackground() {
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none" aria-hidden="true">
+    <div
+      className="fixed inset-0 -z-10 overflow-hidden pointer-events-none"
+      aria-hidden="true"
+    >
       {/* Light mode: warm white with subtle peach blobs */}
       <div className="absolute inset-0 bg-neutral-50 dark:bg-zinc-950 transition-colors duration-500" />
       <motion.div
-        className="absolute w-[600px] h-[600px] rounded-full bg-orange-400/5 dark:bg-orange-500/6 blur-3xl"
+        className="absolute w-150 h-150 rounded-full bg-orange-400/5 dark:bg-orange-500/6 blur-3xl"
         animate={{ x: [-80, 80, -80], y: [-60, 60, -60] }}
         transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
         style={{ top: "5%", left: "-10%" }}
       />
       <motion.div
-        className="absolute w-[500px] h-[500px] rounded-full bg-red-400/5 dark:bg-red-500/5 blur-3xl"
+        className="absolute w-125 h-125 rounded-full bg-red-400/5 dark:bg-red-500/5 blur-3xl"
         animate={{ x: [60, -60, 60], y: [40, -40, 40] }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+        transition={{
+          duration: 18,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 4,
+        }}
         style={{ bottom: "10%", right: "-8%" }}
       />
       <motion.div
         className="absolute w-72 h-72 rounded-full bg-amber-400/4 dark:bg-amber-500/5 blur-3xl"
         animate={{ x: [-40, 40, -40], y: [-30, 60, -30] }}
-        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 8 }}
+        transition={{
+          duration: 25,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 8,
+        }}
         style={{ top: "40%", left: "35%" }}
       />
       {/* Subtle grain overlay */}
@@ -66,7 +80,8 @@ function GlobalBackground() {
 }
 
 export default function App() {
-  const { currentUser, currentView, registrationStep, theme, profiles } = useStore();
+  const { currentUser, currentView, registrationStep, theme, profiles } =
+    useStore();
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
@@ -86,47 +101,38 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    const restoreSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          useStore.setState({
-            currentUser: {
-              id: session.user.id,
-              email: session.user.email ?? "",
-              full_name: "",
-              username: "",
-              avatar_url: "",
-            },
-          });
-        }
-      } catch (error) {
-        console.error("Failed to restore session:", error);
-      } finally {
-        setAuthLoading(false);
-      }
-    };
-    restoreSession();
-  }, []);
+    let isMounted = true;
+    // Grab the safe setter from your Zustand store
+    const setCurrentUser = useStore.getState().setCurrentUser;
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+      if (!isMounted) return;
+
       if (session?.user) {
-        useStore.setState({
-          currentUser: {
-            id: session.user.id,
-            email: session.user.email ?? "",
-            full_name: "",
-            username: "",
-            avatar_url: "",
-          },
+        // Use your dedicated action to cleanly sync state and localStorage together
+        setCurrentUser({
+          id: session.user.id,
+          email: session.user.email ?? "",
+          full_name: "",
+          username: "",
+          avatar_url: "",
         });
       } else {
-        useStore.setState({ currentUser: null });
+        setCurrentUser(null);
+      }
+
+      if (authLoading) {
+        setAuthLoading(false);
       }
     });
-    return () => subscription.unsubscribe();
-  }, []);
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [authLoading]);
 
   const renderActiveView = () => {
     switch (currentView) {
@@ -154,9 +160,17 @@ export default function App() {
       case "search":
         return <SearchPanel />;
       case "admin": {
-        const registeredHumans = (profiles || []).filter((p) => p.id !== "poly-ai");
-        const isFirstThreeRegistered = registeredHumans.slice(0, 3).some((p) => p.id === currentUser?.id);
-        const isUserAdmin = isFirstThreeRegistered || ["kamyavince@gmail.com"].includes(currentUser?.email?.toLowerCase() ?? "");
+        const registeredHumans = (profiles || []).filter(
+          (p) => p.id !== "poly-ai",
+        );
+        const isFirstThreeRegistered = registeredHumans
+          .slice(0, 3)
+          .some((p) => p.id === currentUser?.id);
+        const isUserAdmin =
+          isFirstThreeRegistered ||
+          ["kamyavince@gmail.com"].includes(
+            currentUser?.email?.toLowerCase() ?? "",
+          );
         return isUserAdmin ? <AdminDashboard /> : <HomeFeed />;
       }
       case "ai-poly":
@@ -174,8 +188,10 @@ export default function App() {
         <GlobalBackground />
         <div className="flex flex-col items-center gap-5">
           <div className="relative w-12 h-12">
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
-              <span className="font-serif text-xl font-bold text-white italic">P</span>
+            <div className="absolute inset-0 rounded-xl bg-linear-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+              <span className="font-serif text-xl font-bold text-white italic">
+                P
+              </span>
             </div>
             <div className="absolute inset-0 rounded-xl border-2 border-orange-400/60 animate-ping" />
           </div>
@@ -197,9 +213,7 @@ export default function App() {
       <Topbar />
       <div className="flex-1 flex max-w-7xl mx-auto w-full relative">
         <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0">
-          {renderActiveView()}
-        </div>
+        <div className="flex-1 flex flex-col min-w-0">{renderActiveView()}</div>
       </div>
       <MobileNav />
       {registrationStep > 0 && <AuthModal isOpen={true} onClose={() => {}} />}
