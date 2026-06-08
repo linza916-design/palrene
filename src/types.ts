@@ -1,3 +1,6 @@
+export type RelationshipStatus = 'Single' | 'Dating' | 'Married' | 'Complicated' | 'Open Relationship' | 'Searching' | 'Private';
+export type ConnectionStatus = 'none' | 'pending_sent' | 'pending_received' | 'connected' | 'declined' | 'blocked';
+
 export interface Profile {
   id: string;
   email: string;
@@ -26,6 +29,26 @@ export interface Profile {
   verification_video_url?: string;
   verification_doc_front_url?: string;
   verification_doc_back_url?: string;
+  relationship_status?: RelationshipStatus;
+  token_balance?: number;
+}
+
+export interface Connection {
+  id: string;
+  requester_id: string;
+  recipient_id: string;
+  status: 'pending' | 'accepted' | 'declined' | 'blocked';
+  created_at: string;
+}
+
+export interface TokenTransaction {
+  id: string;
+  userId: string;
+  amount: number;
+  type: 'earn' | 'spend';
+  source: 'rewarded_ad' | 'daily_login' | 'subscription' | 'referral' | 'engagement' | 'boost_post' | 'dm_unlock' | 'ai_chat' | 'profile_boost' | 'ad_request' | 'post_boost' | 'premium_reaction' | 'welcome_bonus';
+  description: string;
+  created_at: string;
 }
 
 export interface Post {
@@ -99,7 +122,7 @@ export interface Message {
 
 export interface Notification {
   id: string;
-  type: 'like' | 'comment' | 'follow' | 'ai_recommendation' | 'message' | 'verification';
+  type: 'like' | 'comment' | 'follow' | 'ai_recommendation' | 'message' | 'verification' | 'connection_request' | 'connection_accepted' | 'token_earned';
   sender?: Partial<Profile>;
   content: string;
   created_at: string;
@@ -129,4 +152,3 @@ export interface PaymentTransaction {
   created_at: string;
   renewal_date?: string;
 }
-

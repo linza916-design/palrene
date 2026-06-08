@@ -1,26 +1,9 @@
 import React, { useState } from "react";
 import { useStore } from "../../store";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Sliders,
-  Shield,
-  CreditCard,
-  Sparkles,
-  AlertCircle,
-  Check,
-  Mail,
-  Award,
-  Crown,
-  Zap,
-  Plus,
-  Trash2,
-  Globe,
-  Smartphone,
-  Landmark,
-  HelpCircle,
-  Eye,
-  Info,
-} from "lucide-react";
+import { FileSliders as Sliders, Shield, CreditCard, Sparkles, CircleAlert as AlertCircle, Check, Mail, Award, Crown, Zap, Plus, Trash2, Globe, Smartphone, Landmark, Circle as HelpCircle, Eye, Info } from "lucide-react";
+import TokenWallet from "../tokens/TokenWallet";
+import RewardedAdModal from "../tokens/RewardedAdModal";
 
 export default function SettingsPanel() {
   const {
@@ -34,10 +17,11 @@ export default function SettingsPanel() {
   const [allowAdult, setAllowAdult] = useState(true);
   const [emailAlerts, setEmailAlerts] = useState(true);
 
-  // Tabs: "billing" | "safeguards" | "ads"
-  const [activeTab, setActiveTab] = useState<"billing" | "safeguards" | "ads">(
+  // Tabs: "billing" | "safeguards" | "ads" | "tokens"
+  const [activeTab, setActiveTab] = useState<"billing" | "safeguards" | "ads" | "tokens">(
     "billing",
   );
+  const [adModalOpen, setAdModalOpen] = useState(false);
 
   // Annual toggle
   const [isAnnual, setIsAnnual] = useState(false);
@@ -364,6 +348,7 @@ export default function SettingsPanel() {
             label: "Promote & Ads",
             icon: GlowIcon(activeTab === "ads" ? Crown : Globe),
           },
+          { id: "tokens", label: "Tokens", icon: Zap },
         ].map((tab) => {
           const Icon = tab.icon;
           const isChosen = activeTab === tab.id;
@@ -863,6 +848,36 @@ export default function SettingsPanel() {
           )}
         </div>
       )}
+
+      {/* ======================= TAB 4: TOKEN WALLET ======================= */}
+      {activeTab === "tokens" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span className="text-amber-400 text-base">⬡</span>
+                Token Wallet
+              </h3>
+              <p className="text-xs text-white/40 mt-0.5">Earn and spend PAL tokens across the platform.</p>
+            </div>
+            <motion.button
+              onClick={() => setAdModalOpen(true)}
+              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold flex items-center gap-1.5 transition"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              aria-label="Watch ad to earn tokens"
+            >
+              <Zap size={13} />
+              Watch Ad (+15)
+            </motion.button>
+          </div>
+
+          <TokenWallet />
+        </div>
+      )}
+
+      {/* Rewarded Ad Modal */}
+      <RewardedAdModal isOpen={adModalOpen} onClose={() => setAdModalOpen(false)} />
 
       {/* ======================= FLUTTERWAVE CHECKOUT MODAL overlay ======================= */}
       <AnimatePresence>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useStore } from "../../store";
 import { motion, AnimatePresence } from "motion/react";
-import { Heart, MessageCircle, Repeat2, Zap, HelpCircle, Check, Eye } from "lucide-react";
+import { Heart, MessageCircle, Repeat2, Zap, Circle as HelpCircle, Check, Eye, Bookmark } from "lucide-react";
 import { Post } from "../../types";
 import CommentSection from "./CommentCard";
 
@@ -26,6 +26,8 @@ export default function PostCard({ post }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [showProfileCard, setShowProfileCard] = useState(false);
   const [sensitiveRevealed, setSensitiveRevealed] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [reposted, setReposted] = useState(false);
 
   // Sensitive content system: Always start blurred if marked sensitive, double click to reveal
   const shouldBlur = post.is_sensitive && !sensitiveRevealed;
@@ -59,12 +61,13 @@ export default function PostCard({ post }: PostCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       onDoubleClick={handleDoubleClick}
       onClick={() => selectPostId(post.id)}
-      className={`p-5 mb-5 rounded-3xl border transition-all duration-300 relative overflow-hidden bg-white/70 dark:bg-zinc-950/40 border-neutral-100 dark:border-neutral-900/60 shadow-sm hover:shadow-md cursor-pointer ${
+      className={`p-5 mb-5 rounded-3xl border transition-all duration-300 relative overflow-hidden bg-white/80 dark:bg-zinc-950/50 backdrop-blur-sm border-neutral-100 dark:border-neutral-900/60 shadow-sm hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-orange-500/3 cursor-pointer group ${
         post.boosted ? "ring-1 ring-orange-500/25 bg-gradient-to-br from-red-500/[0.02] to-orange-500/[0.02] dark:from-red-950/[0.04] dark:to-orange-950/[0.04]" : ""
       }`}
+      whileHover={{ y: -1 }}
     >
       {/* Boosted badge overlay */}
       {post.boosted && (
@@ -300,64 +303,83 @@ export default function PostCard({ post }: PostCardProps) {
       )}
 
       {/* Actions Row controls */}
-      <div className="flex items-center justify-between pt-1 text-neutral-500 dark:text-neutral-400 border-t border-neutral-100/40 dark:border-neutral-900/40 text-[11px] font-mono">
-        
+      <div className="flex items-center justify-between pt-2 text-neutral-500 dark:text-neutral-400 border-t border-neutral-100/60 dark:border-neutral-900/40 text-[11px] font-mono mt-1">
+
         {/* Heart = LIKES */}
-        <button
+        <motion.button
           onClick={(e) => {
             e.stopPropagation();
             likePost(post.id);
+            setLiked(true);
+            setTimeout(() => setLiked(false), 600);
           }}
-          className="flex items-center space-x-1.5 hover:text-red-500 group outline-none transition"
+          className={`flex items-center space-x-1.5 outline-none transition-colors ${liked ? "text-red-500" : "hover:text-red-500"}`}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.88 }}
         >
-          <Heart size={15} className="group-hover:scale-110 group-hover:fill-current transition" />
+          <motion.div
+            animate={liked ? { scale: [1, 1.5, 1], rotate: [0, -15, 15, 0] } : {}}
+            transition={{ duration: 0.4 }}
+          >
+            <Heart size={15} className={liked ? "fill-current text-red-500" : ""} />
+          </motion.div>
           <span>{post.likes_count}</span>
-        </button>
+        </motion.button>
 
         {/* Chat = COMMENTS */}
-        <button
+        <motion.button
           onClick={(e) => {
             e.stopPropagation();
             setShowComments(!showComments);
           }}
-          className={`flex items-center space-x-1.5 hover:text-orange-400 group outline-none transition ${
-            showComments ? "text-orange-400" : ""
-          }`}
+          className={`flex items-center space-x-1.5 outline-none transition-colors ${showComments ? "text-orange-400" : "hover:text-orange-400"}`}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.88 }}
         >
-          <MessageCircle size={15} className="group-hover:scale-110 transition" />
+          <MessageCircle size={15} />
           <span>{post.comments_count}</span>
-        </button>
+        </motion.button>
 
         {/* Rewind = REPOST */}
-        <button
+        <motion.button
           onClick={(e) => {
             e.stopPropagation();
             repostPost(post.id);
+            setReposted(true);
+            setTimeout(() => setReposted(false), 600);
           }}
-          className="flex items-center space-x-1.5 hover:text-green-500 group outline-none transition"
+          className={`flex items-center space-x-1.5 outline-none transition-colors ${reposted ? "text-green-500" : "hover:text-green-500"}`}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.88 }}
         >
-          <Repeat2 size={16} className="group-hover:scale-110 transition" />
+          <motion.div
+            animate={reposted ? { rotate: [0, 360] } : {}}
+            transition={{ duration: 0.5 }}
+          >
+            <Repeat2 size={16} />
+          </motion.div>
           <span>{post.reposts_count}</span>
-        </button>
+        </motion.button>
 
         {/* Thunder = BOOST */}
         {currentUser && (
-          <button
+          <motion.button
             onClick={(e) => {
               e.stopPropagation();
               boostPost(post.id);
             }}
             disabled={post.boosted}
-            className={`flex items-center space-x-1 hover:text-yellow-400 outline-none transition disabled:opacity-50 disabled:pointer-events-none ${
-              post.boosted ? "text-yellow-400 font-bold" : ""
+            className={`flex items-center space-x-1 outline-none transition-colors disabled:opacity-50 disabled:pointer-events-none ${
+              post.boosted ? "text-yellow-400" : "hover:text-yellow-400"
             }`}
-            title="Perform Cosmic Post Boost"
+            title="Boost post"
+            whileHover={post.boosted ? {} : { scale: 1.08 }}
+            whileTap={post.boosted ? {} : { scale: 0.88 }}
           >
-            <Zap size={14} className={post.boosted ? "fill-current animate-pulse text-yellow-400" : ""} />
+            <Zap size={14} className={post.boosted ? "fill-current text-yellow-400 animate-pulse" : ""} />
             <span className="hidden sm:inline">Boost</span>
-          </button>
+          </motion.button>
         )}
-
       </div>
 
       {/* Comment Section Panel */}

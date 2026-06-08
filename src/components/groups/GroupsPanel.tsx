@@ -1,29 +1,42 @@
 import React, { useState } from "react";
 import { useStore } from "../../store";
 import { motion, AnimatePresence } from "motion/react";
-import { Users, Filter, Plus, Flame, Sparkles, LogIn, Megaphone } from "lucide-react";
+import { Users, Plus, Sparkles, Megaphone, Lock, Globe, ChevronRight } from "lucide-react";
+
+const categories = [
+  { id: "all", label: "All Circles" },
+  { id: "relationships", label: "Relationships" },
+  { id: "music", label: "Music & Beats" },
+  { id: "science", label: "Cosmos & Science" },
+  { id: "travel", label: "Wanderlust" },
+  { id: "entertainment", label: "Entertainment" },
+];
+
+const announcements = [
+  {
+    title: "Weekly Vinyl Soundbath Concert",
+    circle: "Acoustic Resonances",
+    desc: "Sync in next Wednesday 8 PM UTC for the ambient soundbath stream.",
+  },
+  {
+    title: "Astrophysics Debate on Dark Energy",
+    circle: "Infinite Cosmos Dialogue",
+    desc: "Debating model timelines of accelerating loops. Everyone welcome.",
+  },
+];
 
 export default function GroupsPanel() {
   const { groups, joinGroup, createGroup, currentUser } = useStore();
   const [selectedCat, setSelectedCat] = useState("all");
-  
-  // Group creation form states
   const [showCreator, setShowCreator] = useState(false);
   const [govName, setGovName] = useState("");
   const [govDesc, setGovDesc] = useState("");
   const [govCategory, setGovCategory] = useState("entertainment");
   const [govPrivate, setGovPrivate] = useState(false);
 
-  // Group announcements board indicators
-  const announcements = [
-    { title: "Weekly Vinyl Soundbath Concert", circle: "Acoustic Resonances", desc: "Sync in next Wednesday 8 PM UTC for the ambient soundbath stream." },
-    { title: "Astrophysics Debate on Dark Energy", circle: "Infinite Cosmos Dialogue", desc: "Debating model timelines of accelerating loops. Everyone welcome." }
-  ];
-
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!govName.trim() || !govDesc.trim()) return;
-
     createGroup(
       govName.trim(),
       govDesc.trim(),
@@ -31,7 +44,6 @@ export default function GroupsPanel() {
       "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=150&auto=format&fit=crop&q=80",
       govPrivate
     );
-
     setGovName("");
     setGovDesc("");
     setGovCategory("entertainment");
@@ -39,138 +51,128 @@ export default function GroupsPanel() {
     setShowCreator(false);
   };
 
-  const categories = [
-    { id: "all", label: "✨ All Circles" },
-    { id: "relationships", label: "Relationships" },
-    { id: "music", label: "Music & Beats" },
-    { id: "science", label: "Cosmos & Science" },
-    { id: "travel", label: "Wanderlust" }
-  ];
-
-  const filteredGroups = groups.filter((g) => {
-    if (selectedCat !== "all") {
-      return g.category === selectedCat;
-    }
-    return true;
-  });
+  const filteredGroups = selectedCat === "all" ? groups : groups.filter((g) => g.category === selectedCat);
 
   return (
-    <div className="flex-1 p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-62px)] overflow-y-auto pb-c-safe">
-      
-      {/* Group listing column */}
-      <div className="lg:col-span-2 space-y-6 text-left">
-        
-        {/* Header containing Filters and Creation CTA */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-neutral-100 dark:border-neutral-900 pb-4">
+    <div className="flex-1 p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-70px)] overflow-y-auto pb-24 md:pb-6">
+      {/* Main column */}
+      <div className="lg:col-span-2 space-y-5 text-left">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-serif font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              <Users className="text-orange-500" size={20} />
-              <span>Circles & Tribes</span>
+              <Users size={20} className="text-orange-500" />
+              Circles & Tribes
             </h2>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Collaborative networks and community circles inspired by Reddit forums.</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              Collaborative networks and community circles.
+            </p>
           </div>
-
           {currentUser && (
-            <button
+            <motion.button
               onClick={() => setShowCreator(!showCreator)}
-              className="px-4.5 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-650 hover:to-orange-550 rounded-xl transition duration-300 transform scale-100 hover:scale-101 active:scale-98 flex items-center gap-1.5"
+              className="flex items-center gap-1.5 px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 rounded-xl shadow-md shadow-orange-500/20 transition-all duration-300 shrink-0"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
               <Plus size={13} />
-              <span>Forge Circle</span>
-            </button>
+              Forge Circle
+            </motion.button>
           )}
         </div>
 
-        {/* Group Creation Creator HUD */}
+        {/* Creator form */}
         <AnimatePresence>
           {showCreator && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="p-5 border border-neutral-150/50 dark:border-neutral-850 rounded-3xl bg-neutral-50 dark:bg-zinc-950/45 space-y-4 overflow-hidden"
+              className="overflow-hidden"
             >
-              <h3 className="text-sm font-serif font-bold dark:text-white">Forge a connection circle</h3>
-              <form onSubmit={handleCreateSubmit} className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-5 border border-orange-500/20 rounded-2xl bg-white/80 dark:bg-zinc-950/60 backdrop-blur-sm shadow-sm space-y-4">
+                <h3 className="text-sm font-serif font-bold text-neutral-900 dark:text-white">
+                  Forge a connection circle
+                </h3>
+                <form onSubmit={handleCreateSubmit} className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 block">Circle Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Acoustic Vinyl Collectors"
+                        value={govName}
+                        onChange={(e) => setGovName(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded-xl bg-white dark:bg-black border border-neutral-200 dark:border-neutral-800 dark:text-white focus:outline-none focus:border-orange-500 transition"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 block">Category</label>
+                      <select
+                        value={govCategory}
+                        onChange={(e) => setGovCategory(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded-xl bg-white dark:bg-black border border-neutral-200 dark:border-neutral-800 dark:text-white focus:outline-none focus:border-orange-500 transition"
+                      >
+                        <option value="entertainment">Entertainment</option>
+                        <option value="relationships">Relationships</option>
+                        <option value="music">Music & Vinyl</option>
+                        <option value="science">Cosmos & Quantum</option>
+                        <option value="travel">Travel</option>
+                      </select>
+                    </div>
+                  </div>
                   <div className="space-y-1">
-                    <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Circle Name</span>
-                    <input
-                      type="text"
-                      placeholder="e.g. Acoustic Vinyl Collectors"
-                      value={govName}
-                      onChange={(e) => setGovName(e.target.value)}
-                      className="w-full text-xs p-2 rounded-xl bg-white dark:bg-black border border-neutral-200 dark:border-neutral-850 dark:text-white focus:outline-none"
+                    <label className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 block">Purpose Description</label>
+                    <textarea
+                      placeholder="We seek vinyl records, discuss quantum loops, and practice warm mindfulness..."
+                      value={govDesc}
+                      onChange={(e) => setGovDesc(e.target.value)}
+                      className="w-full h-16 text-xs p-2.5 rounded-xl bg-white dark:bg-black border border-neutral-200 dark:border-neutral-800 dark:text-white focus:outline-none focus:border-orange-500 transition resize-none"
                     />
                   </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Focus Category</span>
-                    <select
-                      value={govCategory}
-                      onChange={(e) => setGovCategory(e.target.value)}
-                      className="w-full text-xs p-2 rounded-xl bg-white dark:bg-black border border-neutral-200 dark:border-neutral-850 dark:text-white focus:outline-none"
-                    >
-                      <option value="entertainment">Entertainment</option>
-                      <option value="relationships">Relationships</option>
-                      <option value="music">Music & Vinyl</option>
-                      <option value="science">Cosmos & Quantum</option>
-                      <option value="travel">Travel</option>
-                    </select>
+                  <div className="flex items-center justify-between pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer select-none text-[10px] font-mono text-neutral-400">
+                      <input
+                        type="checkbox"
+                        checked={govPrivate}
+                        onChange={() => setGovPrivate(!govPrivate)}
+                        className="rounded accent-orange-500"
+                      />
+                      <Lock size={10} />
+                      Private Circle
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowCreator(false)}
+                        className="px-3.5 py-1.5 text-xs font-mono text-neutral-500 hover:text-white transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4.5 py-1.5 font-mono text-xs font-bold text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-xl hover:opacity-90 shadow transition"
+                      >
+                        Forge Charter
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">Charter/Purpose Description</span>
-                  <textarea
-                    placeholder="We seek vinyl records, discuss quantum loops, and practice warm mindfulness..."
-                    value={govDesc}
-                    onChange={(e) => setGovDesc(e.target.value)}
-                    className="w-full h-16 text-xs p-2.5 rounded-xl bg-white dark:bg-black border border-neutral-200 dark:border-neutral-850 dark:text-white focus:outline-none"
-                  />
-                </div>
-
-                <div className="flex justify-between items-center pt-2">
-                  <label className="flex items-center space-x-2 cursor-pointer select-none text-[10px] font-mono text-neutral-400 dark:text-neutral-500">
-                    <input
-                      type="checkbox"
-                      checked={govPrivate}
-                      onChange={() => setGovPrivate(!govPrivate)}
-                    />
-                    <span>Private Circle (Charter only visible to matches)</span>
-                  </label>
-
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowCreator(false)}
-                      className="px-3.5 py-1.5 text-xs font-mono text-neutral-450 hover:text-white transition"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4.5 py-1.5 font-mono text-xs font-bold text-white bg-orange-500 rounded-xl hover:bg-orange-650 shadow duration-250 transition"
-                    >
-                      Forge Charter
-                    </button>
-                  </div>
-                </div>
-              </form>
+                </form>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Categories Tab selectors */}
-        <div className="flex items-center space-x-2 overflow-x-auto pb-1.5 scrollbar-hide">
+        {/* Category tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCat(cat.id)}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition cursor-pointer outline-none ${
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-all duration-200 outline-none border ${
                 selectedCat === cat.id
-                  ? "bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold shadow-sm focus:ring-1 focus:ring-orange-300"
-                  : "bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-450 hover:text-neutral-900 dark:hover:text-white"
+                  ? "bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold border-transparent shadow-sm"
+                  : "bg-white dark:bg-zinc-950 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-orange-500/40 hover:text-orange-500"
               }`}
             >
               {cat.label}
@@ -178,84 +180,124 @@ export default function GroupsPanel() {
           ))}
         </div>
 
-        {/* Group list panels grids */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {filteredGroups.map((group) => (
-            <div
-              key={group.id}
-              className="p-5 border border-neutral-150/50 dark:border-neutral-900 rounded-3xl bg-white dark:bg-zinc-950/45 space-y-4 relative group hover:shadow-md transition duration-300"
-            >
-              <div className="flex items-center space-x-3.5">
-                <img
-                  src={group.avatar_url}
-                  alt=""
-                  className="w-12 h-12 rounded-2xl object-cover border border-neutral-200 dark:border-neutral-850"
-                />
-                <div className="overflow-hidden text-left">
-                  <h3 className="text-xs font-bold dark:text-white truncate max-w-[130px]" title={group.name}>
-                    {group.name}
-                  </h3>
-                  <div className="flex items-center space-x-1 text-[9px] font-mono text-neutral-400 capitalize">
-                    <span>{group.category}</span>
-                    <span>•</span>
-                    <span>{group.members_count} Members</span>
-                  </div>
+        {/* Group grid */}
+        {filteredGroups.length === 0 ? (
+          <div className="py-12 text-center">
+            <Users size={28} className="text-neutral-300 dark:text-neutral-700 mx-auto mb-3" />
+            <p className="text-sm font-serif text-neutral-500 dark:text-neutral-400">No circles in this category yet.</p>
+            <p className="text-xs text-neutral-400 dark:text-neutral-600 mt-1">Be the first to forge one!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {filteredGroups.map((group, i) => (
+              <motion.div
+                key={group.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="group relative bg-white/80 dark:bg-zinc-950/50 backdrop-blur-sm border border-neutral-100 dark:border-neutral-900 rounded-2xl overflow-hidden hover:border-orange-500/25 hover:shadow-md hover:shadow-orange-500/5 transition-all duration-300"
+                whileHover={{ y: -2 }}
+              >
+                {/* Banner strip */}
+                <div className="h-14 bg-gradient-to-r from-red-500/20 via-orange-500/20 to-amber-500/20 relative overflow-hidden">
+                  <img
+                    src={group.avatar_url}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-40 group-hover:scale-105 transition-all duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30" />
+                  {group.is_private && (
+                    <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/50 text-[8px] font-mono text-white/80 backdrop-blur-sm">
+                      <Lock size={8} />
+                      Private
+                    </span>
+                  )}
                 </div>
-              </div>
 
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-3 leading-relaxed italic pr-1.5 font-serif">
-                "{group.description}"
-              </p>
+                <div className="p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <img
+                      src={group.avatar_url}
+                      alt={group.name}
+                      className="w-10 h-10 rounded-xl object-cover border border-neutral-200 dark:border-neutral-800 -mt-7 shrink-0 shadow-sm"
+                    />
+                    <div className="overflow-hidden min-w-0 flex-1">
+                      <h3 className="text-xs font-bold text-neutral-900 dark:text-white truncate">{group.name}</h3>
+                      <div className="flex items-center gap-1.5 text-[9px] font-mono text-neutral-400 mt-0.5">
+                        <Globe size={9} />
+                        <span className="capitalize">{group.category}</span>
+                        <span>·</span>
+                        <Users size={9} />
+                        <span>{group.members_count} members</span>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => joinGroup(group.id)}
-                  className="flex-1 py-1.5 text-xs font-mono font-bold bg-neutral-100 dark:bg-neutral-900 dark:text-white hover:bg-orange-500 hover:text-white dark:hover:bg-orange-500 rounded-xl transition duration-300 active:scale-98"
-                >
-                  Join Tribe
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 line-clamp-2 leading-relaxed italic">
+                    "{group.description}"
+                  </p>
 
+                  <button
+                    onClick={() => joinGroup(group.id)}
+                    className="w-full py-2 text-xs font-mono font-bold rounded-xl bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-gradient-to-r hover:from-red-500 hover:to-orange-500 hover:text-white transition-all duration-300 flex items-center justify-center gap-1.5"
+                  >
+                    <span>Join Tribe</span>
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Announcements / active events sidebar columns */}
-      <div className="space-y-6">
-        
-        {/* Forum Announcements panel */}
-        <div className="p-5 bg-gradient-to-br from-zinc-900 to-black border border-zinc-850 rounded-3xl shadow-xl text-left relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-red-400/5 blur-3xl rounded-full" />
-          <h4 className="text-sm font-semibold text-white mb-4 flex items-center gap-1.5 font-serif">
-            <Megaphone size={15} className="text-red-400 fill-current animate-bounce" />
-            <span>Circle Announcements</span>
+      {/* Sidebar */}
+      <div className="space-y-5 text-left">
+        {/* Announcements */}
+        <div className="relative p-5 rounded-2xl bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 shadow-xl overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/6 blur-2xl rounded-full pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-500/5 blur-2xl rounded-full pointer-events-none" />
+
+          <h4 className="text-sm font-serif font-semibold text-white mb-4 flex items-center gap-2">
+            <Megaphone size={14} className="text-orange-400" />
+            Circle Announcements
           </h4>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {announcements.map((ann, idx) => (
-              <div key={idx} className="p-3 bg-zinc-950 rounded-xl border border-zinc-900 space-y-1 text-xs">
-                <span className="text-[8px] font-mono text-orange-400 leading-none block uppercase font-bold tracking-wider">#{ann.circle}</span>
-                <span className="font-bold text-white block">{ann.title}</span>
-                <p className="text-zinc-400 leading-relaxed italic">{ann.desc}</p>
-              </div>
+              <motion.div
+                key={idx}
+                className="p-3 bg-white/5 rounded-xl border border-white/8 space-y-1"
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                whileHover={{ x: 2 }}
+              >
+                <span className="text-[8px] font-mono text-orange-400 uppercase font-bold tracking-wider block">
+                  #{ann.circle}
+                </span>
+                <span className="text-xs font-bold text-white block">{ann.title}</span>
+                <p className="text-[10px] text-white/50 leading-relaxed">{ann.desc}</p>
+              </motion.div>
             ))}
           </div>
         </div>
 
-        {/* Guidance tip on joining */}
-        <div className="p-5 bg-zinc-900/40 border border-zinc-900 rounded-3xl shadow text-left space-y-2">
-          <div className="flex items-center space-x-1.5 text-yellow-500 font-mono text-[9px] uppercase tracking-wider font-bold">
-            <Sparkles size={11} className="animate-spin" />
-            <span>Tribe wisdom by Poly</span>
+        {/* Poly AI tribe wisdom */}
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-yellow-500/8 to-orange-500/8 border border-yellow-500/15 space-y-2.5">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center">
+              <Sparkles size={13} className="text-yellow-500" />
+            </div>
+            <span className="text-[10px] font-mono font-bold text-yellow-600 dark:text-yellow-500 uppercase tracking-wider">
+              Poly Wisdom
+            </span>
           </div>
-          <p className="text-xs text-zinc-450 italic leading-relaxed">
+          <p className="text-xs text-neutral-600 dark:text-neutral-400 italic leading-relaxed">
             "Entering a tribe means matching frequencies before speaking. Spend your first evening reading the silently pinned charters."
           </p>
         </div>
-
       </div>
-
     </div>
   );
 }

@@ -27,7 +27,6 @@ export default function SearchPanel() {
 
   const handleProfileInspect = (id: string) => {
     setView("profile");
-    localStorage.setItem("palrene_view_profile_id", id);
   };
 
   // Compile active tag options from profile interests
@@ -241,7 +240,7 @@ export default function SearchPanel() {
                       Audit
                     </button>
                     <button
-                      onClick={() => startConversation(prof.id)}
+                      onClick={async () => { await startConversation(prof.id); }}
                       className="p-1 px-2.5 bg-linear-to-r from-red-500 to-orange-500 text-white rounded hover:scale-101 transition"
                     >
                       Whisper

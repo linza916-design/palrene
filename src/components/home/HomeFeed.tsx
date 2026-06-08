@@ -1,25 +1,11 @@
 import React, { useState } from "react";
 import { useStore } from "../../store";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Plus,
-  Smile,
-  Image as ImageIcon,
-  HelpCircle,
-  Loader,
-  Zap,
-  Eye,
-  X,
-  PlayCircle,
-  Hash,
-  AtSign,
-} from "lucide-react";
+import { Plus, Smile, Image as ImageIcon, Circle as HelpCircle, Loader, Zap, Eye, X, CirclePlay as PlayCircle, Hash, AtSign } from "lucide-react";
 import PostCard from "../feed/PostCard";
 import FeedFilters from "../feed/FeedFilters";
 import GifModal from "../modals/GifModal";
 import UnsplashModal from "../modals/UnsplashModal";
-import CustomSoundCloudPlayer from "./CustomSoundCloudPlayer";
-
 export default function HomeFeed() {
   const { currentUser, posts, createPost, searchQuery, searchFilter } =
     useStore();
@@ -129,7 +115,7 @@ export default function HomeFeed() {
   });
 
   return (
-    <div className="flex-1 max-w-xl mx-auto p-4 sm:p-5 space-y-5 h-[calc(100vh-62px)] overflow-y-auto pb-c-safe">
+    <div className="flex-1 max-w-xl mx-auto p-4 sm:p-5 space-y-5 h-[calc(100vh-70px)] overflow-y-auto pb-24 md:pb-6">
       {/* 1. COLLAPSIBLE POST CREATION SYSTEM CARD */}
       {currentUser && (
         <div className="p-4 bg-white/70 dark:bg-zinc-950/45 border border-neutral-150/40 dark:border-neutral-900 rounded-3xl shadow-sm transition">
@@ -343,9 +329,6 @@ export default function HomeFeed() {
         </div>
       )}
 
-      {/* Acoustic Sync Sound Station integrated directly into the seeker feed */}
-      <CustomSoundCloudPlayer />
-
       {/* 2. DYNAMIC ROW METRICS CATEGORY FILTER BAR */}
       <FeedFilters
         selectedCategory={selectedCategory}
@@ -357,8 +340,9 @@ export default function HomeFeed() {
       {/* 3. INFINITE FEED LIST GRID */}
       <div className="space-y-4">
         {filteredPosts.length === 0 ? (
-          <div className="text-center py-20 text-xs text-neutral-450 font-mono">
-            No ripples matching this frequency. Seek another circle.
+          <div className="text-center py-20 text-xs text-neutral-400 dark:text-neutral-600 font-mono">
+            <p>No ripples matching this frequency.</p>
+            <p className="mt-1 text-neutral-300 dark:text-neutral-700">Try a different filter or create a post.</p>
           </div>
         ) : (
           filteredPosts.map((post) => <PostCard key={post.id} post={post} />)

@@ -1,29 +1,15 @@
 import React, { useState } from "react";
 import { useStore } from "../../store";
 import { motion } from "motion/react";
-import { 
-  Building, 
-  Award, 
-  Users, 
-  FileText, 
-  ShieldAlert, 
-  LineChart, 
-  TrendingUp, 
-  Check, 
-  X,
-  Megaphone,
-  CreditCard,
-  Target,
-  ShieldOff,
-  DollarSign
-} from "lucide-react";
+import { Building, Award, Users, FileText, ShieldAlert, ChartLine as LineChart, TrendingUp, Check, X, Megaphone, CreditCard, Target, ShieldOff, DollarSign } from "lucide-react";
 
 export default function AdminDashboard() {
-  const { 
-    profiles, 
-    posts, 
-    approveVerification, 
-    moderatePost, 
+  const {
+    profiles,
+    posts,
+    approveVerification,
+    rejectVerification,
+    moderatePost,
     setView,
     payments,
     refundPaymentTransaction,
@@ -49,6 +35,7 @@ export default function AdminDashboard() {
   };
 
   const handleDenyVerification = (id: string) => {
+    rejectVerification(id);
     alert("Profile manual ID rejected, notification dispatched safely.");
   };
 

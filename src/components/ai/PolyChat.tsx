@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useStore } from "../../store";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, Send, RefreshCw, Compass, Bookmark, MessageSquare, AlertCircle, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Sparkles, Send, RefreshCw, Compass, Bookmark, MessageSquare, CircleAlert as AlertCircle, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 
 export default function PolyChat() {
   const { currentUser, profiles, groups } = useStore();
@@ -209,16 +209,28 @@ export default function PolyChat() {
 
   return (
     <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 p-4 sm:p-6 h-[calc(100vh-112px)] overflow-y-auto">
-      
-      {/* LEFT & CENTER columns: Interactive Sparkles chatbot with glowing particle aesthetics */}
-      <div className="lg:col-span-2 flex flex-col h-full bg-zinc-950/75 border border-zinc-900 rounded-3xl overflow-hidden relative shadow-2xl p-5 justify-between">
-        
-        {/* Particle and orbit glowing circles background matching cinematic feel */}
-        <div className="absolute inset-0 bg-radial-gradient from-red-650/10 via-transparent to-transparent pointer-events-none opacity-40" />
-        <div className="absolute top-10 right-10 w-24 h-24 rounded-full bg-orange-500/5 blur-3xl pointer-events-none" />
+
+      {/* LEFT & CENTER: Futuristic Poly chat panel */}
+      <div className="lg:col-span-2 flex flex-col h-full bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden relative shadow-2xl justify-between">
+
+        {/* Ambient background gradients */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="absolute top-0 left-1/4 w-64 h-64 bg-orange-500/5 blur-3xl rounded-full" />
+          <div className="absolute bottom-0 right-1/4 w-48 h-48 bg-rose-500/5 blur-3xl rounded-full" />
+          {/* Floating particles */}
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 rounded-full bg-orange-400/20"
+              style={{ left: `${10 + i * 11}%`, top: `${15 + (i % 3) * 25}%` }}
+              animate={{ y: [0, -20, 0], opacity: [0.2, 0.5, 0.2] }}
+              transition={{ duration: 3 + i * 0.5, repeat: Infinity, delay: i * 0.4, ease: "easeInOut" }}
+            />
+          ))}
+        </div>
 
         {/* Header */}
-        <div className="relative border-b border-zinc-900 pb-3.5 flex items-center justify-between">
+        <div className="relative border-b border-white/5 pb-3.5 px-5 pt-5 flex items-center justify-between">
           <div className="flex items-center space-x-3.5 text-left">
             <div className="relative w-10 h-10 rounded-full bg-gradient-to-tr from-red-650 via-orange-500 to-rose-700/80 p-0.5 shadow shadow-orange-950/30 shrink-0">
               <img
@@ -284,7 +296,7 @@ export default function PolyChat() {
         </div>
 
         {/* Message Flow Area */}
-        <div className="flex-1 overflow-y-auto my-4 space-y-4 pr-1 relative max-h-[calc(100vh-320px)]">
+        <div className="flex-1 overflow-y-auto my-4 px-5 space-y-4 pr-5 relative max-h-[calc(100vh-320px)]">
           {messages.map((m, idx) => (
             <motion.div
               key={idx}
@@ -351,32 +363,28 @@ export default function PolyChat() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Voice Transcribing Interim Live Text Info Panel */}
+        {/* Voice listening */}
         {isListening && (
-          <div className="px-3.5 py-2.5 bg-gradient-to-r from-red-650/10 to-orange-500/10 border border-orange-500/20 rounded-xl mb-2 flex items-center justify-between animate-pulse">
+          <div className="px-5 py-2.5 bg-gradient-to-r from-red-500/10 to-orange-500/10 border-t border-orange-500/20 flex items-center justify-between animate-pulse" role="status" aria-live="polite">
             <span className="text-[10px] font-mono text-orange-400 flex items-center gap-2 max-w-[85%]">
               <span className="flex space-x-1 items-center shrink-0">
-                <span className="w-1.5 h-1.5 bg-red-550 rounded-full animate-ping" />
-                <span>Voice Alignment Active:</span>
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" aria-hidden="true" />
+                <span>Listening:</span>
               </span>
               <span className="text-zinc-300 italic truncate font-sans">
-                {transcribingText || "Listening to speech resonance..."}
+                {transcribingText || "Speak now..."}
               </span>
             </span>
-            
-            {/* Elegant visual sound wave animations */}
-            <div className="flex items-end space-x-0.5 h-3">
-              <span className="w-0.5 bg-orange-500 h-1" />
-              <span className="w-0.5 bg-orange-500 h-2 animate-bounce" style={{ animationDelay: "0.1s" }} />
-              <span className="w-0.5 bg-orange-500 h-3 animate-bounce" style={{ animationDelay: "0.2s" }} />
-              <span className="w-0.5 bg-orange-500 h-1.5 animate-bounce" style={{ animationDelay: "0.3s" }} />
-              <span className="w-0.5 bg-orange-500 h-2" style={{ animationDelay: "0.15s" }} />
+            <div className="flex items-end space-x-0.5 h-3" aria-hidden="true">
+              {[1, 2, 3, 2, 1].map((h, i) => (
+                <span key={i} className="w-0.5 bg-orange-500 animate-bounce" style={{ height: `${h * 4}px`, animationDelay: `${i * 0.1}s` }} />
+              ))}
             </div>
           </div>
         )}
 
         {/* Chat input box */}
-        <form onSubmit={handleSend} className="relative mt-2 flex gap-2">
+        <form onSubmit={handleSend} className="relative mt-2 px-5 pb-5 flex gap-2">
           {hasSpeechSupport ? (
             <button
               type="button"

@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useStore } from "../../store";
-import { Send, Sparkles, Smile, Image, Loader, Trash2, HelpCircle } from "lucide-react";
+import { Send, Sparkles, Smile, Loader, Circle as HelpCircle, Lock } from "lucide-react";
 import GifModal from "../modals/GifModal";
+import ConnectionButton from "../connections/ConnectionButton";
+import { motion } from "motion/react";
 
 export default function ChatWindow() {
-  const { 
-    currentUser, 
-    activeConversationId, 
-    conversations, 
-    messages, 
-    sendMessage, 
-    profiles 
+  const {
+    currentUser,
+    activeConversationId,
+    conversations,
+    messages,
+    sendMessage,
+    profiles,
+    connections,
+    spendTokens,
+    getConnectionStatus
   } = useStore();
 
   const [inputText, setInputText] = useState("");
@@ -18,11 +23,28 @@ export default function ChatWindow() {
   const [typing, setTyping] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeConv = conversations.find((c) => c.id === activeConversationId);
   const recipient = activeConv?.participants[0];
   const liveProfile = profiles.find((p) => p.id === recipient?.id);
+
+  const isPolyAI = recipient?.id === "poly-ai";
+  const connectionStatus = recipient && currentUser ? getConnectionStatus(recipient.id) : 'none';
+  const isConnected = isPolyAI || connectionStatus === 'connected';
+  const tokenBalance = currentUser?.token_balance || 0;
+  const DM_UNLOCK_COST = 20;
+
+  const handleUnlockWithTokens = async () => {
+    if (!recipient || !currentUser) return;
+    setUnlocking(true);
+    const success = spendTokens(DM_UNLOCK_COST, 'dm_unlock', `Premium DM unlock — ${liveProfile?.full_name || 'user'}`);
+    if (!success) {
+      alert("Insufficient tokens. Earn more tokens to unlock messaging!");
+    }
+    setUnlocking(false);
+  };
 
   // Filter messages for active conversation
   const convMessages = messages.filter((m) => m.conversation_id === activeConversationId);
@@ -105,7 +127,7 @@ export default function ChatWindow() {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white dark:bg-zinc-950/20 relative">
+    <div className="flex-1 flex flex-col h-full bg-zinc-950/20 relative overflow-hidden">
       
       {/* Active Header */}
       <div className="p-4 border-b border-neutral-100 dark:border-neutral-850 bg-neutral-50/40 dark:bg-neutral-950/20 flex items-center justify-between">
@@ -225,6 +247,53 @@ export default function ChatWindow() {
             </button>
           ))}
         </div>
+      )}
+
+      {/* Connection Gate */}
+      {!isConnected && recipient && (
+        <motion.div
+          className="absolute inset-0 bg-zinc-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-8 z-10 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          role="alert"
+          aria-label="Connection required to message"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
+            <Lock size={28} className="text-white/40" />
+          </div>
+          <h3 className="text-base font-bold text-white mb-2">Connection Required</h3>
+          <p className="text-sm text-white/50 max-w-xs mb-6">
+            Connect with {liveProfile?.full_name || recipient.full_name} to unlock messaging. Or unlock instantly with tokens.
+          </p>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <ConnectionButton profileId={recipient.id} size="lg" className="justify-center w-full" />
+
+            <div className="flex items-center gap-2 text-white/20 text-xs">
+              <div className="flex-1 h-px bg-white/10" />
+              <span>or</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            <motion.button
+              onClick={handleUnlockWithTokens}
+              disabled={unlocking || tokenBalance < DM_UNLOCK_COST}
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                tokenBalance >= DM_UNLOCK_COST
+                  ? "bg-amber-500/20 border border-amber-500/30 text-amber-300 hover:bg-amber-500/30"
+                  : "bg-white/5 border border-white/10 text-white/30 cursor-not-allowed"
+              }`}
+              whileHover={tokenBalance >= DM_UNLOCK_COST ? { scale: 1.02 } : {}}
+              whileTap={tokenBalance >= DM_UNLOCK_COST ? { scale: 0.98 } : {}}
+              aria-label={`Unlock messaging for ${DM_UNLOCK_COST} tokens`}
+            >
+              <span aria-hidden="true">⬡</span>
+              {tokenBalance >= DM_UNLOCK_COST
+                ? `Unlock with ${DM_UNLOCK_COST} tokens (you have ${tokenBalance})`
+                : `Need ${DM_UNLOCK_COST} tokens (you have ${tokenBalance})`
+              }
+            </motion.button>
+          </div>
+        </motion.div>
       )}
 
       {/* Input container controls */}

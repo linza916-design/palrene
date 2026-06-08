@@ -12,22 +12,9 @@ export default function CommentSection({ postId, commentsCount }: CommentSection
   const { currentUser, addComment, profiles } = useStore();
   const [commentText, setCommentText] = useState("");
   
-  // Create beautiful local inline comments for the post to display
-  // Using dynamic state so user sees comments update instantly!
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: "c-initial-1",
-      post_id: postId,
-      userId: "user-1",
-      profile: {
-        full_name: "Clara Moreau",
-        username: "clara_aesthetic",
-        avatar_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80"
-      },
-      content: "This feels like a perfect reflection of why relationships need space to breathe. 🧡",
-      created_at: new Date(Date.now() - 3600000).toISOString()
-    }
-  ]);
+  // Local comment list — pre-populated from store would require a comments table query;
+  // for now start empty and let users add comments that persist via addComment()
+  const [comments, setComments] = useState<Comment[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
