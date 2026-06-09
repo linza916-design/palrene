@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 import { useStore } from "./store";
+import { getOnboardingProfile } from "./lib/onboarding";
 
 import Topbar from "./components/layout/Topbar";
 import Sidebar from "./components/layout/Sidebar";
@@ -30,6 +31,8 @@ import PolyChat from "./components/ai/PolyChat";
 import AuthModal from "./components/modals/AuthModal";
 
 import PostDetail from "./components/feed/PostDetail";
+import PostModal from "./components/feed/PostModal";
+import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 
 function GlobalBackground() {
   return (
@@ -83,9 +86,43 @@ export default function App() {
   const { currentUser, currentView, registrationStep, theme, profiles } =
     useStore();
   const [authLoading, setAuthLoading] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [modalPostId, setModalPostId] = useState<string | null>(null);
 
   useEffect(() => {
     useStore.getState().initializeDynamicData();
+  }, []);
+
+  useEffect(() => {
+    // Check for post ID in URL (supports both ?post=UUID and #/post/UUID)
+    const checkPostUrl = () => {
+      // Query param method: ?post=UUID
+      const params = new URLSearchParams(window.location.search);
+      const queryPostId = params.get("post");
+      if (queryPostId) {
+        setModalPostId(queryPostId);
+        return;
+      }
+
+      // Hash-based routing: #/post/UUID
+      const hash = window.location.hash;
+      if (hash.startsWith("#/post/")) {
+        const postId = hash.replace("#/post/", "");
+        if (postId) {
+          setModalPostId(postId);
+        }
+      }
+    };
+
+    checkPostUrl();
+
+    // Listen for hash changes
+    const handleHashChange = () => checkPostUrl();
+    window.addEventListener("hashchange", handleHashChange);
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -102,25 +139,39 @@ export default function App() {
 
   useEffect(() => {
     let isMounted = true;
-    // Grab the safe setter from your Zustand store
     const setCurrentUser = useStore.getState().setCurrentUser;
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+    } = supabase.auth.onAuthStateChange(async (_event: AuthChangeEvent, session: Session | null) => {
       if (!isMounted) return;
 
       if (session?.user) {
-        // Use your dedicated action to cleanly sync state and localStorage together
-        setCurrentUser({
-          id: session.user.id,
-          email: session.user.email ?? "",
-          full_name: "",
-          username: "",
-          avatar_url: "",
-        });
+        const profile = await getOnboardingProfile(session.user.id);
+        if (!isMounted) return;
+
+        if (!profile || !profile.profile_completed) {
+          setNeedsOnboarding(true);
+          setCurrentUser({
+            id: session.user.id,
+            email: session.user.email ?? "",
+            full_name: profile?.full_name ?? session.user.user_metadata?.full_name ?? session.user.user_metadata?.name ?? "",
+            username: profile?.username ?? "",
+            avatar_url: profile?.avatar_url ?? session.user.user_metadata?.avatar_url ?? "",
+          });
+        } else {
+          setNeedsOnboarding(false);
+          setCurrentUser({
+            id: session.user.id,
+            email: session.user.email ?? "",
+            full_name: profile.full_name ?? "",
+            username: profile.username ?? "",
+            avatar_url: profile.avatar_url ?? "",
+          });
+        }
       } else {
         setCurrentUser(null);
+        setNeedsOnboarding(false);
       }
 
       if (authLoading) {
@@ -207,6 +258,33 @@ export default function App() {
     return <LandingPage />;
   }
 
+  if (needsOnboarding) {
+    return (
+      <>
+        <GlobalBackground />
+        <OnboardingWizard
+          onComplete={async () => {
+            const session = await supabase.auth.getSession();
+            const user = session.data.session?.user;
+            if (user) {
+              const profile = await getOnboardingProfile(user.id);
+              if (profile) {
+                useStore.getState().setCurrentUser({
+                  id: user.id,
+                  email: user.email ?? "",
+                  full_name: profile.full_name ?? "",
+                  username: profile.username ?? "",
+                  avatar_url: profile.avatar_url ?? "",
+                });
+              }
+            }
+            setNeedsOnboarding(false);
+          }}
+        />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col text-neutral-800 dark:text-neutral-100 transition-colors duration-300">
       <GlobalBackground />
@@ -217,6 +295,11 @@ export default function App() {
       </div>
       <MobileNav />
       {registrationStep > 0 && <AuthModal isOpen={true} onClose={() => {}} />}
+      <AnimatePresence>
+        {modalPostId && (
+          <PostModal postId={modalPostId} onClose={() => setModalPostId(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

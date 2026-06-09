@@ -85,6 +85,9 @@ export interface Comment {
   profile: Partial<Profile>;
   content: string;
   created_at: string;
+  parent_comment_id?: string;
+  likes_count?: number;
+  replies_count?: number;
 }
 
 export interface Group {

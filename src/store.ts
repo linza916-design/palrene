@@ -470,16 +470,14 @@ export const useStore = create<PalreneState>((set, get) => ({
         created_at: new Date().toISOString(),
       };
       try {
-        await supabase
-          .from("connections")
-          .insert([
-            {
-              id: newConn.id,
-              requester_id: user.id,
-              recipient_id: userId,
-              status: "blocked",
-            },
-          ]);
+        await supabase.from("connections").insert([
+          {
+            id: newConn.id,
+            requester_id: user.id,
+            recipient_id: userId,
+            status: "blocked",
+          },
+        ]);
       } catch {}
       const updatedConnections = [...get().connections, newConn];
       set({ connections: updatedConnections });
@@ -836,13 +834,15 @@ export const useStore = create<PalreneState>((set, get) => ({
       );
 
       // Fetch connections
+      // Fetch connections
       const user = get().currentUser;
       let connectionsData: Connection[] = get().connections;
       if (user) {
         const { data: dbConns } = await supabase
           .from("connections")
           .select("*")
-          .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`);
+          .or([`requester_id.eq.${user.id}`, `recipient_id.eq.${user.id}`]); // Fixed: Passed as an array of conditions
+
         if (dbConns && dbConns.length > 0) {
           connectionsData = dbConns.map((c: any) => ({
             id: c.id,
@@ -1307,17 +1307,15 @@ export const useStore = create<PalreneState>((set, get) => ({
           set({ notifications: [newNotif, ...get().notifications] });
           setStoredData("palrene_notifications", get().notifications);
           try {
-            supabase
-              .from("notifications")
-              .insert([
-                {
-                  id: newNotif.id,
-                  user_id: post.userId,
-                  type: "like",
-                  sender_id: user.id,
-                  content: newNotif.content,
-                },
-              ]);
+            supabase.from("notifications").insert([
+              {
+                id: newNotif.id,
+                user_id: post.userId,
+                type: "like",
+                sender_id: user.id,
+                content: newNotif.content,
+              },
+            ]);
           } catch {}
           get().triggerEmailAlert(
             "New Like on Palrene",
@@ -1369,17 +1367,15 @@ export const useStore = create<PalreneState>((set, get) => ({
           set({ notifications: [newNotif, ...get().notifications] });
           setStoredData("palrene_notifications", get().notifications);
           try {
-            supabase
-              .from("notifications")
-              .insert([
-                {
-                  id: newNotif.id,
-                  user_id: post.userId,
-                  type: "comment",
-                  sender_id: user.id,
-                  content: newNotif.content,
-                },
-              ]);
+            supabase.from("notifications").insert([
+              {
+                id: newNotif.id,
+                user_id: post.userId,
+                type: "comment",
+                sender_id: user.id,
+                content: newNotif.content,
+              },
+            ]);
           } catch {}
         }
         return { ...post, reposts_count: post.reposts_count + 1 };
@@ -1466,17 +1462,15 @@ export const useStore = create<PalreneState>((set, get) => ({
           set({ notifications: [newNotif, ...get().notifications] });
           setStoredData("palrene_notifications", get().notifications);
           try {
-            supabase
-              .from("notifications")
-              .insert([
-                {
-                  id: newNotif.id,
-                  user_id: post.userId,
-                  type: "comment",
-                  sender_id: user.id,
-                  content: newNotif.content,
-                },
-              ]);
+            supabase.from("notifications").insert([
+              {
+                id: newNotif.id,
+                user_id: post.userId,
+                type: "comment",
+                sender_id: user.id,
+                content: newNotif.content,
+              },
+            ]);
           } catch {}
           get().triggerEmailAlert(
             "New Comment on Palrene",
@@ -1540,17 +1534,15 @@ export const useStore = create<PalreneState>((set, get) => ({
     };
 
     try {
-      await supabase
-        .from("notifications")
-        .insert([
-          {
-            id: newNotif.id,
-            user_id: profileId,
-            type: "follow",
-            sender_id: user.id,
-            content: newNotif.content,
-          },
-        ]);
+      await supabase.from("notifications").insert([
+        {
+          id: newNotif.id,
+          user_id: profileId,
+          type: "follow",
+          sender_id: user.id,
+          content: newNotif.content,
+        },
+      ]);
     } catch {}
 
     set({
@@ -1759,17 +1751,15 @@ export const useStore = create<PalreneState>((set, get) => ({
             is_ai: true,
           };
           try {
-            await supabase
-              .from("messages")
-              .insert([
-                {
-                  id: aiMsg.id,
-                  conversation_id: conversationId,
-                  sender_id: "poly-ai",
-                  content: aiMsg.content,
-                  is_ai: true,
-                },
-              ]);
+            await supabase.from("messages").insert([
+              {
+                id: aiMsg.id,
+                conversation_id: conversationId,
+                sender_id: "poly-ai",
+                content: aiMsg.content,
+                is_ai: true,
+              },
+            ]);
           } catch {}
           const doubleUpdatedMessages = [...get().messages, aiMsg];
           const doubleUpdatedConversations = get().conversations.map((c) => {
@@ -1855,22 +1845,20 @@ export const useStore = create<PalreneState>((set, get) => ({
       is_private: isPrivate,
     };
     try {
-      await supabase
-        .from("groups")
-        .insert([
-          {
-            id: newGroup.id,
-            name,
-            description,
-            category,
-            avatar_url: newGroup.avatar_url,
-            banner_url: newGroup.banner_url,
-            members_count: 1,
-            posts_count: 0,
-            created_by: user.id,
-            is_private: isPrivate,
-          },
-        ]);
+      await supabase.from("groups").insert([
+        {
+          id: newGroup.id,
+          name,
+          description,
+          category,
+          avatar_url: newGroup.avatar_url,
+          banner_url: newGroup.banner_url,
+          members_count: 1,
+          posts_count: 0,
+          created_by: user.id,
+          is_private: isPrivate,
+        },
+      ]);
     } catch (e) {
       console.warn("Supabase group insert error", e);
     }
@@ -1922,16 +1910,14 @@ export const useStore = create<PalreneState>((set, get) => ({
       read: false,
     };
     try {
-      await supabase
-        .from("notifications")
-        .insert([
-          {
-            id: verifyNotif.id,
-            user_id: user.id,
-            type: "verification",
-            content: verifyNotif.content,
-          },
-        ]);
+      await supabase.from("notifications").insert([
+        {
+          id: verifyNotif.id,
+          user_id: user.id,
+          type: "verification",
+          content: verifyNotif.content,
+        },
+      ]);
     } catch {}
     set({
       currentUser: updatedUser,
@@ -1963,19 +1949,17 @@ export const useStore = create<PalreneState>((set, get) => ({
       created_at: new Date().toISOString(),
     };
     try {
-      await supabase
-        .from("ads")
-        .insert([
-          {
-            id: newAd.id,
-            title,
-            description,
-            link_url: linkUrl,
-            image_url: newAd.image_url,
-            status: "pending",
-            created_by: user.id,
-          },
-        ]);
+      await supabase.from("ads").insert([
+        {
+          id: newAd.id,
+          title,
+          description,
+          link_url: linkUrl,
+          image_url: newAd.image_url,
+          status: "pending",
+          created_by: user.id,
+        },
+      ]);
     } catch (e) {
       console.warn("Supabase ad insert error", e);
     }
@@ -2180,19 +2164,17 @@ export const useStore = create<PalreneState>((set, get) => ({
 
   addPaymentTransaction: async (tx) => {
     try {
-      await supabase
-        .from("payments")
-        .insert([
-          {
-            id: tx.id,
-            user_id: tx.userId,
-            user_name: tx.userName,
-            plan: tx.plan,
-            amount: tx.amount,
-            status: tx.status,
-            provider: tx.provider,
-          },
-        ]);
+      await supabase.from("payments").insert([
+        {
+          id: tx.id,
+          user_id: tx.userId,
+          user_name: tx.userName,
+          plan: tx.plan,
+          amount: tx.amount,
+          status: tx.status,
+          provider: tx.provider,
+        },
+      ]);
     } catch (e) {
       console.warn("Supabase addPaymentTransaction error", e);
     }
