@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 export default async function handler(req: any, res: any) {
+  // Guard clause for HTTP Methods
   if (req.method !== "POST") {
     return res.status(405).json({
       error: "Method not allowed",
@@ -9,58 +10,55 @@ export default async function handler(req: any, res: any) {
 
   try {
     const apiKey = process.env.GEMINI_API_KEY;
-
     if (!apiKey) {
       return res.status(500).json({
         error: "GEMINI_API_KEY not configured",
       });
     }
 
-    const ai = new GoogleGenAI({
-      apiKey,
-    });
+    const ai = new GoogleGenAI({ apiKey });
 
-    const { message, history } = req.body;
+    // Fix: Read profile metadata or userId sent from PolyChat.tsx
+    // Provide safe defaults so it never crashes if fields are missing
+    const { userId, userProfile = {} } = req.body;
 
-    if (!message) {
-      return res.status(400).json({
-        error: "Message is required",
-      });
-    }
+    // Build a structured prompt telling Gemini to act as a system recommender
+    const systemPrompt = `
+      You are Poly, an AI companion. Based on the user profile data provided, generate 3 highly personalized, engaging, and brief starter recommendations or action items for their dashboard.
+      Return the output as a clean text summary or bullet points.
+      
+      User Profile Context:
+      ${JSON.stringify(userProfile)}
+      User ID: ${userId || "New User"}
+    `;
 
-    const formattedContents: any[] = [];
-
-    if (Array.isArray(history)) {
-      history.forEach((h: any) => {
-        formattedContents.push({
-          role: h.role === "assistant" ? "model" : "user",
-          parts: [{ text: h.content }],
-        });
-      });
-    }
-
-    formattedContents.push({
-      role: "user",
-      parts: [{ text: message }],
-    });
-
+    // Fix: Pass structured parameters into the SDK generator configuration block
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: formattedContents,
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: systemPrompt }],
+        },
+      ],
       config: {
-        temperature: 0.8,
+        temperature: 0.7,
       },
     });
 
+    // Safeguard missing or truncated responses safely
+    const recommendationReply =
+      response.text || "Explore the community feed to connect with others!";
+
     return res.status(200).json({
-      reply: response.text || "I'm reflecting on your thoughts.",
+      reply: recommendationReply,
     });
   } catch (error: any) {
-    console.error("POLY CHAT ERROR:", error);
+    console.error("POLY RECOMMENDATION ENGINE ERROR:", error);
 
     return res.status(500).json({
-      error: error?.message || "Unknown error",
-      stack: error?.stack,
+      error: error?.message || "Internal Server Error",
+      stack: process.env.NODE_ENV === "development" ? error?.stack : undefined,
     });
   }
 }

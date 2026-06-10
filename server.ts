@@ -126,7 +126,7 @@ async function startServer() {
 
       if (!Array.isArray(lastMessages)) {
         return res.status(400).json({
-          error: "lastMessages is required.",
+          error: "lastMessages array is required.",
         });
       }
 
@@ -134,20 +134,26 @@ async function startServer() {
         .map((m: any) => `${m.sender_name || "Them"}: ${m.content}`)
         .join("\n");
 
+      // Updated: Implemented strict schema mapping to prevent JSON parsing issues
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: `Suggest 3 replies for ${recipientName || "contact"}.
-
-${contextText}`,
+        contents: `Analyze the conversation history and suggest exactly 3 engaging, contextually accurate reply variations for ${recipientName || "contact"}.\n\nHistory:\n${contextText}`,
         config: {
           responseMimeType: "application/json",
+          responseSchema: {
+            type: "ARRAY",
+            items: { type: "STRING" },
+          },
           temperature: 0.7,
         },
       });
 
       try {
+        const parsedSuggestions = JSON.parse(response.text || "[]");
         return res.json({
-          suggestions: JSON.parse(response.text || "[]"),
+          suggestions: Array.isArray(parsedSuggestions)
+            ? parsedSuggestions
+            : [],
         });
       } catch {
         return res.json({
@@ -159,6 +165,7 @@ ${contextText}`,
         });
       }
     } catch (error: any) {
+      console.error("SUGGEST REPLY ERROR:", error);
       return res.status(500).json({
         error: error.message,
       });
@@ -175,27 +182,44 @@ ${contextText}`,
         });
       }
 
-      const { interests = [], goals = [], currentBio = "" } = req.body;
+      // Updated: Guarding against empty bodies to prevent initialization failures
+      const { interests = [], goals = [], currentBio = "" } = req.body || {};
 
+      const dynamicPrompt = `
+        Analyze the following user profile metrics and generate personal community action items.
+        Interests: ${interests.length ? interests.join(", ") : "Not specified yet"}
+        Goals: ${goals.length ? goals.join(", ") : "Not specified yet"}
+        Bio: ${currentBio || "New Palrene Community Member"}
+      `;
+
+      // Updated: Implemented robust explicit object structure validation schema
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: `
-Interests: ${interests.join(", ")}
-
-Goals: ${goals.join(", ")}
-
-Bio: ${currentBio}
-
-Return JSON recommendations.
-        `,
+        contents: dynamicPrompt,
         config: {
           responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              icebreaker: { type: "STRING" },
+              recommended_groups: { type: "ARRAY", items: { type: "STRING" } },
+              connection_task: { type: "STRING" },
+              intro_message: { type: "STRING" },
+            },
+            required: [
+              "icebreaker",
+              "recommended_groups",
+              "connection_task",
+              "intro_message",
+            ],
+          },
           temperature: 0.7,
         },
       });
 
       try {
-        return res.json(JSON.parse(response.text || "{}"));
+        const parsedRecommendations = JSON.parse(response.text || "{}");
+        return res.json(parsedRecommendations);
       } catch {
         return res.json({
           icebreaker: "What's a memory that still makes you smile?",
@@ -205,6 +229,7 @@ Return JSON recommendations.
         });
       }
     } catch (error: any) {
+      console.error("RECOMMEND ERROR:", error);
       return res.status(500).json({
         error: error.message,
       });

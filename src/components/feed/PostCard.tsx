@@ -1,7 +1,16 @@
 import React, { useState } from "react";
 import { useStore } from "../../store";
 import { motion, AnimatePresence } from "motion/react";
-import { Heart, MessageCircle, Repeat2, Zap, Circle as HelpCircle, Check, Eye, Bookmark } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  Repeat2,
+  Zap,
+  Circle as HelpCircle,
+  Check,
+  Eye,
+  Bookmark,
+} from "lucide-react";
 import { Post } from "../../types";
 import CommentSection from "./CommentCard";
 
@@ -10,17 +19,17 @@ interface PostCardProps {
 }
 
 export default function PostCard({ post }: PostCardProps) {
-  const { 
-    currentUser, 
-    likePost, 
-    repostPost, 
-    boostPost, 
-    voteInQuiz, 
-    startConversation, 
+  const {
+    currentUser,
+    likePost,
+    repostPost,
+    boostPost,
+    voteInQuiz,
+    startConversation,
     setView,
     toggleFollow,
     profiles,
-    selectPostId
+    selectPostId,
   } = useStore();
 
   const [showComments, setShowComments] = useState(false);
@@ -50,9 +59,11 @@ export default function PostCard({ post }: PostCardProps) {
 
   const isQuizVoted = post.quiz?.voted_index !== undefined;
   const totalVotes = post.quiz?.votes?.reduce((a, b) => a + b, 0) || 0;
-  
+
   // Calculate index of most voted option safely
-  const maxVoteIndex = post.quiz?.votes ? post.quiz.votes.indexOf(Math.max(...post.quiz.votes)) : 0;
+  const maxVoteIndex = post.quiz?.votes
+    ? post.quiz.votes.indexOf(Math.max(...post.quiz.votes))
+    : 0;
 
   // Find host profile to check follower counts or verification
   const authorProfile = profiles.find((p) => p.id === post.userId);
@@ -65,13 +76,15 @@ export default function PostCard({ post }: PostCardProps) {
       onDoubleClick={handleDoubleClick}
       onClick={() => selectPostId(post.id)}
       className={`p-5 mb-5 rounded-3xl border transition-all duration-300 relative overflow-hidden bg-white/80 dark:bg-zinc-950/50 backdrop-blur-sm border-neutral-100 dark:border-neutral-900/60 shadow-sm hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-orange-500/3 cursor-pointer group ${
-        post.boosted ? "ring-1 ring-orange-500/25 bg-gradient-to-br from-red-500/[0.02] to-orange-500/[0.02] dark:from-red-950/[0.04] dark:to-orange-950/[0.04]" : ""
+        post.boosted
+          ? "ring-1 ring-orange-500/25 bg-linear-to-br from-red-500/2 to-orange-500/2 dark:from-red-950/4 dark:to-orange-950/4"
+          : ""
       }`}
       whileHover={{ y: -1 }}
     >
       {/* Boosted badge overlay */}
       {post.boosted && (
-        <div className="absolute top-0 right-0 px-3 py-1 text-[8px] font-mono font-bold tracking-widest text-white uppercase bg-gradient-to-r from-red-500 to-orange-500 rounded-bl-xl flex items-center gap-1">
+        <div className="absolute top-0 right-0 px-3 py-1 text-[8px] font-mono font-bold tracking-widest text-white uppercase bg-linear-to-r from-red-500 to-orange-500 rounded-bl-xl flex items-center gap-1">
           <Zap size={8} className="fill-current animate-bounce" />
           <span>Boosted resonance</span>
         </div>
@@ -81,7 +94,7 @@ export default function PostCard({ post }: PostCardProps) {
       <div className="flex items-center justify-between mb-4 relative">
         <div className="flex items-center space-x-3">
           {/* Hover Avatar */}
-          <div 
+          <div
             className="relative cursor-pointer"
             onMouseEnter={() => setShowProfileCard(true)}
             onMouseLeave={() => setShowProfileCard(false)}
@@ -117,7 +130,7 @@ export default function PostCard({ post }: PostCardProps) {
                           e.stopPropagation();
                           toggleFollow(authorProfile.id);
                         }}
-                        className="px-2.5 py-1 text-[10px] font-bold text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-full"
+                        className="px-2.5 py-1 text-[10px] font-bold text-white bg-linear-to-r from-red-500 to-orange-500 rounded-full"
                       >
                         Follow
                       </button>
@@ -126,11 +139,20 @@ export default function PostCard({ post }: PostCardProps) {
                   <div>
                     <h5 className="text-xs font-bold text-neutral-800 dark:text-white flex items-center gap-1">
                       {authorProfile.full_name}
-                      {authorProfile.is_verified && <span className="text-[10px] text-blue-500 font-bold">✔</span>}
+                      {authorProfile.is_verified && (
+                        <span className="text-[10px] text-blue-500 font-bold">
+                          ✔
+                        </span>
+                      )}
                     </h5>
-                    <p className="text-[9px] text-neutral-400 font-mono">@{authorProfile.username}</p>
+                    <p className="text-[9px] text-neutral-400 font-mono">
+                      @{authorProfile.username}
+                    </p>
                     <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-1.5 line-clamp-2 italic">
-                      "{authorProfile.bio || 'Navigating connections without boundaries.'}"
+                      "
+                      {authorProfile.bio ||
+                        "Navigating connections without boundaries."}
+                      "
                     </p>
                   </div>
                   <div className="flex justify-between border-t border-neutral-200 dark:border-neutral-800 pt-2 text-[9px] font-mono text-neutral-400">
@@ -144,13 +166,15 @@ export default function PostCard({ post }: PostCardProps) {
 
           {/* Details */}
           <div>
-            <h4 
+            <h4
               onClick={handleProfileClick}
               className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 cursor-pointer hover:underline font-sans flex items-center gap-1"
             >
               {post.profile.full_name}
               {post.profile.is_verified && (
-                <span className="w-3.5 h-3.5 rounded-full bg-orange-500/10 dark:bg-orange-400/10 text-orange-500 dark:text-orange-400 text-[8px] flex items-center justify-center font-bold">✔</span>
+                <span className="w-3.5 h-3.5 rounded-full bg-orange-500/10 dark:bg-orange-400/10 text-orange-500 dark:text-orange-400 text-[8px] flex items-center justify-center font-bold">
+                  ✔
+                </span>
               )}
             </h4>
             <div className="flex items-center space-x-1.5 text-[10px] text-neutral-400 dark:text-neutral-500 font-mono">
@@ -176,10 +200,12 @@ export default function PostCard({ post }: PostCardProps) {
       </div>
 
       {/* Post Text Content - double click targets block reveal */}
-      <div 
+      <div
         onDoubleClick={handleDoubleClick}
-        className={`text-xs text-neutral-700 dark:text-neutral-300 mb-4 leading-relaxed font-sans select-text break-words cursor-help relative ${
-          shouldBlur ? "blur-md select-none hover:blur-sm contrast-125 saturate-50" : ""
+        className={`text-xs text-neutral-700 dark:text-neutral-300 mb-4 leading-relaxed font-sans select-text wrap-break-word cursor-help relative ${
+          shouldBlur
+            ? "blur-md select-none hover:blur-sm contrast-125 saturate-50"
+            : ""
         }`}
       >
         {shouldBlur && (
@@ -207,7 +233,8 @@ export default function PostCard({ post }: PostCardProps) {
           <div className="space-y-2">
             {post.quiz.options.map((opt, idx) => {
               const itemVotes = post.quiz?.votes[idx] || 0;
-              const percent = totalVotes > 0 ? Math.round((itemVotes / totalVotes) * 100) : 0;
+              const percent =
+                totalVotes > 0 ? Math.round((itemVotes / totalVotes) * 100) : 0;
               const isSelected = post.quiz?.voted_index === idx;
               const isMostSelected = idx === maxVoteIndex;
 
@@ -218,7 +245,9 @@ export default function PostCard({ post }: PostCardProps) {
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    console.log(`[Quiz Click Capture] Button clicked for post: ${post.id}, choice: "${opt}" at index: ${idx}`);
+                    console.log(
+                      `[Quiz Click Capture] Button clicked for post: ${post.id}, choice: "${opt}" at index: ${idx}`,
+                    );
                     voteInQuiz(post.id, idx);
                   }}
                   disabled={isQuizVoted}
@@ -226,10 +255,10 @@ export default function PostCard({ post }: PostCardProps) {
                 >
                   {/* Progress background bar */}
                   {isQuizVoted && (
-                    <div 
+                    <div
                       className={`absolute left-0 top-0 bottom-0 transition-all duration-700 ${
-                        isMostSelected 
-                          ? "bg-gradient-to-r from-red-500/10 to-orange-500/10 dark:from-red-500/15 dark:to-orange-500/15" 
+                        isMostSelected
+                          ? "bg-linear-to-r from-red-500/10 to-orange-500/10 dark:from-red-500/15 dark:to-orange-500/15"
                           : "bg-neutral-200/20 dark:bg-neutral-800/15"
                       }`}
                       style={{ width: `${percent}%` }}
@@ -237,8 +266,12 @@ export default function PostCard({ post }: PostCardProps) {
                   )}
 
                   <div className="relative flex items-center space-x-2">
-                    {isSelected && <Check size={12} className="text-orange-500" />}
-                    <span className={`font-medium ${isSelected ? "text-orange-500 font-semibold" : "text-neutral-700 dark:text-neutral-300"}`}>
+                    {isSelected && (
+                      <Check size={12} className="text-orange-500" />
+                    )}
+                    <span
+                      className={`font-medium ${isSelected ? "text-orange-500 font-semibold" : "text-neutral-700 dark:text-neutral-300"}`}
+                    >
                       {opt}
                     </span>
                   </div>
@@ -267,7 +300,7 @@ export default function PostCard({ post }: PostCardProps) {
 
       {/* Post Media Carousel / Attachment */}
       {post.media_urls && post.media_urls.length > 0 && (
-        <div 
+        <div
           onDoubleClick={handleDoubleClick}
           className={`grid grid-cols-1 gap-2 mb-4 rounded-2xl overflow-hidden aspect-video relative max-h-72 border border-neutral-100 dark:border-neutral-900 group ${
             shouldBlur ? "blur-md select-none saturate-50 contrast-125" : ""
@@ -287,7 +320,7 @@ export default function PostCard({ post }: PostCardProps) {
 
       {/* GIPHY attached GIF illustration */}
       {post.giphy_url && (
-        <div 
+        <div
           onDoubleClick={handleDoubleClick}
           className={`rounded-2xl overflow-hidden mb-4 border border-neutral-150 dark:border-neutral-850 bg-black/20 text-center max-h-60 flex items-center justify-center ${
             shouldBlur ? "blur-md select-none saturate-50 contrast-125" : ""
@@ -304,7 +337,6 @@ export default function PostCard({ post }: PostCardProps) {
 
       {/* Actions Row controls */}
       <div className="flex items-center justify-between pt-2 text-neutral-500 dark:text-neutral-400 border-t border-neutral-100/60 dark:border-neutral-900/40 text-[11px] font-mono mt-1">
-
         {/* Heart = LIKES */}
         <motion.button
           onClick={(e) => {
@@ -318,10 +350,15 @@ export default function PostCard({ post }: PostCardProps) {
           whileTap={{ scale: 0.88 }}
         >
           <motion.div
-            animate={liked ? { scale: [1, 1.5, 1], rotate: [0, -15, 15, 0] } : {}}
+            animate={
+              liked ? { scale: [1, 1.5, 1], rotate: [0, -15, 15, 0] } : {}
+            }
             transition={{ duration: 0.4 }}
           >
-            <Heart size={15} className={liked ? "fill-current text-red-500" : ""} />
+            <Heart
+              size={15}
+              className={liked ? "fill-current text-red-500" : ""}
+            />
           </motion.div>
           <span>{post.likes_count}</span>
         </motion.button>
@@ -376,7 +413,12 @@ export default function PostCard({ post }: PostCardProps) {
             whileHover={post.boosted ? {} : { scale: 1.08 }}
             whileTap={post.boosted ? {} : { scale: 0.88 }}
           >
-            <Zap size={14} className={post.boosted ? "fill-current text-yellow-400 animate-pulse" : ""} />
+            <Zap
+              size={14}
+              className={
+                post.boosted ? "fill-current text-yellow-400 animate-pulse" : ""
+              }
+            />
             <span className="hidden sm:inline">Boost</span>
           </motion.button>
         )}
@@ -386,7 +428,6 @@ export default function PostCard({ post }: PostCardProps) {
       {showComments && (
         <CommentSection postId={post.id} commentsCount={post.comments_count} />
       )}
-
     </motion.div>
   );
 }

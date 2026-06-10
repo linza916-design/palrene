@@ -503,7 +503,7 @@ export const useStore = create<PalreneState>((set, get) => ({
     try {
       await supabase.from("token_transactions").insert([
         {
-          id: tx.id,
+          // id: tx.id, // Remove this line if it's not a real UUID string! Let database generate it.
           user_id: user.id,
           amount,
           type: "earn",
@@ -511,7 +511,9 @@ export const useStore = create<PalreneState>((set, get) => ({
           description,
         },
       ]);
-    } catch {}
+    } catch (err) {
+      console.error("Insert transaction failed:", err);
+    }
 
     const newBalance = (user.token_balance || 0) + amount;
     const updatedUser = { ...user, token_balance: newBalance };
@@ -834,16 +836,18 @@ export const useStore = create<PalreneState>((set, get) => ({
       );
 
       // Fetch connections
-      // Fetch connections
-      const user = get().currentUser;
       let connectionsData: Connection[] = get().connections;
-      if (user) {
-        const { data: dbConns } = await supabase
+      if (activeUser && activeUser.id) {
+        // Safe template string for PostgREST
+        const { data: dbConns, error: connError } = await supabase
           .from("connections")
           .select("*")
-          .or([`requester_id.eq.${user.id}`, `recipient_id.eq.${user.id}`]); // Fixed: Passed as an array of conditions
+          .or(
+            `requester_id.eq.${activeUser.id},recipient_id.eq.${activeUser.id}`,
+          );
 
-        if (dbConns && dbConns.length > 0) {
+        if (!connError && dbConns && dbConns.length > 0) {
+          // 3. Fix: Safely map properties without breaking strict TypeScript rules
           connectionsData = dbConns.map((c: any) => ({
             id: c.id,
             requester_id: c.requester_id,
@@ -854,21 +858,28 @@ export const useStore = create<PalreneState>((set, get) => ({
         }
       }
 
+      // 4. Fix: Safe state assignment with array checking fallbacks
       set({
-        profiles: pData.length ? pData : get().profiles,
+        profiles: pData && pData.length ? pData : get().profiles,
         currentUser: activeUser || get().currentUser,
-        posts: postsData.length ? postsData : get().posts,
-        groups: groupsData.length ? groupsData : get().groups,
-        conversations: conversationsData.length
-          ? conversationsData
-          : get().conversations,
-        messages: messagesData.length ? messagesData : get().messages,
-        notifications: notificationsData.length
-          ? notificationsData
-          : get().notifications,
-        ads: adsData.length ? adsData : get().ads,
-        payments: paymentsData.length ? paymentsData : get().payments,
-        connections: connectionsData,
+        posts: postsData && postsData.length ? postsData : get().posts,
+        groups: groupsData && groupsData.length ? groupsData : get().groups,
+        conversations:
+          conversationsData && conversationsData.length
+            ? conversationsData
+            : get().conversations,
+        messages:
+          messagesData && messagesData.length ? messagesData : get().messages,
+        notifications:
+          notificationsData && notificationsData.length
+            ? notificationsData
+            : get().notifications,
+        ads: adsData && adsData.length ? adsData : get().ads,
+        payments:
+          paymentsData && paymentsData.length ? paymentsData : get().payments,
+        connections: connectionsData.length
+          ? connectionsData
+          : get().connections,
       });
 
       console.log("Palrene: Supabase active data sync completed successfully.");

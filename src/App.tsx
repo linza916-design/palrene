@@ -4,7 +4,12 @@ import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "motion/react";
 
 import { useStore } from "./store";
-import { getOnboardingProfile } from "./lib/onboarding";
+import {
+  getOnboardingProfile,
+  ensureOnboardingProfile,
+  isOnboardingComplete,
+  type OnboardingProfile,
+} from "./lib/onboarding";
 
 import Topbar from "./components/layout/Topbar";
 import Sidebar from "./components/layout/Sidebar";
@@ -34,13 +39,14 @@ import PostDetail from "./components/feed/PostDetail";
 import PostModal from "./components/feed/PostModal";
 import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 
+type AppPhase = "loading" | "landing" | "onboarding" | "main";
+
 function GlobalBackground() {
   return (
     <div
       className="fixed inset-0 -z-10 overflow-hidden pointer-events-none"
       aria-hidden="true"
     >
-      {/* Light mode: warm white with subtle peach blobs */}
       <div className="absolute inset-0 bg-neutral-50 dark:bg-zinc-950 transition-colors duration-500" />
       <motion.div
         className="absolute w-150 h-150 rounded-full bg-orange-400/5 dark:bg-orange-500/6 blur-3xl"
@@ -70,7 +76,6 @@ function GlobalBackground() {
         }}
         style={{ top: "40%", left: "35%" }}
       />
-      {/* Subtle grain overlay */}
       <div
         className="absolute inset-0 opacity-[0.015] dark:opacity-[0.025]"
         style={{
@@ -85,8 +90,7 @@ function GlobalBackground() {
 export default function App() {
   const { currentUser, currentView, registrationStep, theme, profiles } =
     useStore();
-  const [authLoading, setAuthLoading] = useState(true);
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [phase, setPhase] = useState<AppPhase>("loading");
   const [modalPostId, setModalPostId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -94,35 +98,22 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Check for post ID in URL (supports both ?post=UUID and #/post/UUID)
     const checkPostUrl = () => {
-      // Query param method: ?post=UUID
       const params = new URLSearchParams(window.location.search);
       const queryPostId = params.get("post");
       if (queryPostId) {
         setModalPostId(queryPostId);
         return;
       }
-
-      // Hash-based routing: #/post/UUID
       const hash = window.location.hash;
       if (hash.startsWith("#/post/")) {
         const postId = hash.replace("#/post/", "");
-        if (postId) {
-          setModalPostId(postId);
-        }
+        if (postId) setModalPostId(postId);
       }
     };
-
     checkPostUrl();
-
-    // Listen for hash changes
-    const handleHashChange = () => checkPostUrl();
-    window.addEventListener("hashchange", handleHashChange);
-
-    return () => {
-      window.removeEventListener("hashchange", handleHashChange);
-    };
+    window.addEventListener("hashchange", checkPostUrl);
+    return () => window.removeEventListener("hashchange", checkPostUrl);
   }, []);
 
   useEffect(() => {
@@ -137,53 +128,113 @@ export default function App() {
     }
   }, [theme]);
 
+  // Main auth + onboarding state derivation
+  // This is the single source of truth for app phase
   useEffect(() => {
     let isMounted = true;
-    const setCurrentUser = useStore.getState().setCurrentUser;
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event: AuthChangeEvent, session: Session | null) => {
+    const resolvePhase = async (session: Session | null) => {
       if (!isMounted) return;
 
-      if (session?.user) {
-        const profile = await getOnboardingProfile(session.user.id);
-        if (!isMounted) return;
+      // No session → landing page
+      if (!session?.user) {
+        useStore.getState().setCurrentUser(null);
+        setPhase("landing");
+        return;
+      }
 
-        if (!profile || !profile.profile_completed) {
-          setNeedsOnboarding(true);
-          setCurrentUser({
-            id: session.user.id,
-            email: session.user.email ?? "",
-            full_name: profile?.full_name ?? session.user.user_metadata?.full_name ?? session.user.user_metadata?.name ?? "",
-            username: profile?.username ?? "",
-            avatar_url: profile?.avatar_url ?? session.user.user_metadata?.avatar_url ?? "",
-          });
-        } else {
-          setNeedsOnboarding(false);
-          setCurrentUser({
-            id: session.user.id,
-            email: session.user.email ?? "",
-            full_name: profile.full_name ?? "",
-            username: profile.username ?? "",
-            avatar_url: profile.avatar_url ?? "",
-          });
-        }
+      const user = session.user;
+
+      // Fetch or create the onboarding profile
+      const profile = await ensureOnboardingProfile(user.id);
+
+      if (!isMounted) return;
+
+      if (!profile) {
+        // Profile fetch/create failed — still set user so they aren't stuck
+        // but show onboarding so they can try again
+        useStore.getState().setCurrentUser({
+          id: user.id,
+          email: user.email ?? "",
+          full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
+          username: "",
+          avatar_url: user.user_metadata?.avatar_url ?? "",
+        });
+        setPhase("onboarding");
+        return;
+      }
+
+      // Derive onboarding state from the DB profile, not local state
+      if (isOnboardingComplete(profile)) {
+        // Onboarding complete → main app
+        useStore.getState().setCurrentUser({
+          id: user.id,
+          email: user.email ?? "",
+          full_name: profile.full_name ?? "",
+          username: profile.username ?? "",
+          avatar_url: profile.avatar_url ?? "",
+          bio: profile.bio,
+          location: profile.location,
+          interests: profile.interests,
+          recognition_goals: profile.recognition_goals,
+          token_balance: profile.token_balance,
+          subscription_tier: profile.subscription_tier as any,
+        });
+        setPhase("main");
       } else {
-        setCurrentUser(null);
-        setNeedsOnboarding(false);
+        // Onboarding incomplete → show wizard (resumes from saved step)
+        useStore.getState().setCurrentUser({
+          id: user.id,
+          email: user.email ?? "",
+          full_name: profile.full_name ?? user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
+          username: profile.username ?? "",
+          avatar_url: profile.avatar_url ?? user.user_metadata?.avatar_url ?? "",
+        });
+        setPhase("onboarding");
       }
+    };
 
-      if (authLoading) {
-        setAuthLoading(false);
-      }
+    // Initial session check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      resolvePhase(session);
+    });
+
+    // Listen for auth changes (sign in, sign out, token refresh)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      resolvePhase(session);
     });
 
     return () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [authLoading]);
+  }, []);
+
+  const handleOnboardingComplete = async () => {
+    // Re-derive state from DB after onboarding completes
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const profile = await getOnboardingProfile(session.user.id);
+      if (profile && isOnboardingComplete(profile)) {
+        useStore.getState().setCurrentUser({
+          id: session.user.id,
+          email: session.user.email ?? "",
+          full_name: profile.full_name ?? "",
+          username: profile.username ?? "",
+          avatar_url: profile.avatar_url ?? "",
+          bio: profile.bio,
+          location: profile.location,
+          interests: profile.interests,
+          recognition_goals: profile.recognition_goals,
+          token_balance: profile.token_balance,
+          subscription_tier: profile.subscription_tier as any,
+        });
+      }
+    }
+    setPhase("main");
+  };
 
   const renderActiveView = () => {
     switch (currentView) {
@@ -233,7 +284,8 @@ export default function App() {
     }
   };
 
-  if (authLoading) {
+  // Phase: Loading
+  if (phase === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-zinc-950">
         <GlobalBackground />
@@ -254,37 +306,22 @@ export default function App() {
     );
   }
 
-  if (!currentUser) {
+  // Phase: No auth → Landing
+  if (phase === "landing") {
     return <LandingPage />;
   }
 
-  if (needsOnboarding) {
+  // Phase: Authenticated but onboarding incomplete
+  if (phase === "onboarding") {
     return (
       <>
         <GlobalBackground />
-        <OnboardingWizard
-          onComplete={async () => {
-            const session = await supabase.auth.getSession();
-            const user = session.data.session?.user;
-            if (user) {
-              const profile = await getOnboardingProfile(user.id);
-              if (profile) {
-                useStore.getState().setCurrentUser({
-                  id: user.id,
-                  email: user.email ?? "",
-                  full_name: profile.full_name ?? "",
-                  username: profile.username ?? "",
-                  avatar_url: profile.avatar_url ?? "",
-                });
-              }
-            }
-            setNeedsOnboarding(false);
-          }}
-        />
+        <OnboardingWizard onComplete={handleOnboardingComplete} />
       </>
     );
   }
 
+  // Phase: Main app
   return (
     <div className="min-h-screen flex flex-col text-neutral-800 dark:text-neutral-100 transition-colors duration-300">
       <GlobalBackground />

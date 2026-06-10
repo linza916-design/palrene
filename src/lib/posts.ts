@@ -74,11 +74,12 @@ const REPLIES_BATCH_SIZE = 3;
 export async function getFeedPosts(
   limit = 20,
   offset = 0,
-  category?: string
+  category?: string,
 ): Promise<PostWithProfile[]> {
   let query = supabase
     .from("posts")
-    .select(`
+    .select(
+      `
       *,
       profiles!posts_user_id_fkey (
         id,
@@ -87,7 +88,8 @@ export async function getFeedPosts(
         avatar_url,
         is_verified
       )
-    `)
+    `,
+    )
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -102,25 +104,41 @@ export async function getFeedPosts(
     return [];
   }
 
-  return (data || []).map((post) => ({
+  return (data || []).map((post: PostWithProfile) => ({
     ...post,
     media_urls: post.media_urls || [],
   }));
 }
 
-export async function getPostById(postId: string): Promise<PostWithProfile | null> {
+export async function getPostById(
+  postId: string,
+): Promise<PostWithProfile | null> {
+  // Fix: Check if the string matches a standard UUID structure
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  // Guard Clause: If it's a dummy text string like "post-4", exit immediately
+  if (!uuidRegex.test(postId)) {
+    console.warn(
+      `getPostById cancelled: "${postId}" is a placeholder text string, not a valid UUID.`,
+    );
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("posts")
-    .select(`
+    .select(
+      `
       *,
       profiles!posts_user_id_fkey (
         id,
         full_name,
         username,
         avatar_url,
-        is_verified
+        is_verified:verified
       )
-    `)
+    `,
+    ) // Fix: Map database 'verified' column to frontend 'is_verified' property
     .eq("id", postId)
     .maybeSingle();
 
@@ -147,7 +165,7 @@ export async function createPost(
     is_sensitive?: boolean;
     category?: string;
     quiz?: DbPost["quiz"];
-  }
+  },
 ): Promise<PostWithProfile | null> {
   const { data, error } = await supabase
     .from("posts")
@@ -161,7 +179,8 @@ export async function createPost(
       category: options?.category || "General",
       quiz: options?.quiz,
     })
-    .select(`
+    .select(
+      `
       *,
       profiles!posts_user_id_fkey (
         id,
@@ -170,7 +189,8 @@ export async function createPost(
         avatar_url,
         is_verified
       )
-    `)
+    `,
+    )
     .single();
 
   if (error) {
@@ -198,7 +218,7 @@ export async function toggleReaction(
   userId: string,
   postId?: string,
   commentId?: string,
-  reactionType = "like"
+  reactionType = "like",
 ): Promise<{ reacted: boolean; reaction?: DbReaction }> {
   const existingQuery = supabase
     .from("reactions")
@@ -240,12 +260,9 @@ export async function toggleReaction(
 export async function getUserReaction(
   userId: string,
   postId?: string,
-  commentId?: string
+  commentId?: string,
 ): Promise<DbReaction | null> {
-  let query = supabase
-    .from("reactions")
-    .select("*")
-    .eq("user_id", userId);
+  let query = supabase.from("reactions").select("*").eq("user_id", userId);
 
   if (postId) {
     query = query.eq("post_id", postId);
@@ -260,11 +277,12 @@ export async function getUserReaction(
 export async function getComments(
   postId: string,
   offset = 0,
-  limit = COMMENTS_BATCH_SIZE
+  limit = COMMENTS_BATCH_SIZE,
 ): Promise<CommentWithProfile[]> {
   const { data, error } = await supabase
     .from("comments")
-    .select(`
+    .select(
+      `
       *,
       profiles!comments_user_id_fkey (
         id,
@@ -273,7 +291,8 @@ export async function getComments(
         avatar_url,
         is_verified
       )
-    `)
+    `,
+    )
     .eq("post_id", postId)
     .is("parent_comment_id", null)
     .order("likes_count", { ascending: false })
@@ -291,11 +310,12 @@ export async function getComments(
 export async function getReplies(
   parentCommentId: string,
   offset = 0,
-  limit = REPLIES_BATCH_SIZE
+  limit = REPLIES_BATCH_SIZE,
 ): Promise<CommentWithProfile[]> {
   const { data, error } = await supabase
     .from("comments")
-    .select(`
+    .select(
+      `
       *,
       profiles!comments_user_id_fkey (
         id,
@@ -304,7 +324,8 @@ export async function getReplies(
         avatar_url,
         is_verified
       )
-    `)
+    `,
+    )
     .eq("parent_comment_id", parentCommentId)
     .order("created_at", { ascending: true })
     .range(offset, offset + limit - 1);
@@ -321,7 +342,7 @@ export async function createComment(
   userId: string,
   postId: string,
   content: string,
-  parentCommentId?: string
+  parentCommentId?: string,
 ): Promise<CommentWithProfile | null> {
   const { data, error } = await supabase
     .from("comments")
@@ -331,7 +352,8 @@ export async function createComment(
       content,
       parent_comment_id: parentCommentId || null,
     })
-    .select(`
+    .select(
+      `
       *,
       profiles!comments_user_id_fkey (
         id,
@@ -340,7 +362,8 @@ export async function createComment(
         avatar_url,
         is_verified
       )
-    `)
+    `,
+    )
     .single();
 
   if (error) {
@@ -353,7 +376,7 @@ export async function createComment(
 
 export async function deleteComment(
   commentId: string,
-  userId: string
+  userId: string,
 ): Promise<boolean> {
   const { error } = await supabase
     .from("comments")
@@ -371,7 +394,7 @@ export async function deleteComment(
 
 export async function toggleBookmark(
   userId: string,
-  postId: string
+  postId: string,
 ): Promise<{ bookmarked: boolean }> {
   const { data: existing } = await supabase
     .from("bookmarks")
@@ -398,7 +421,10 @@ export async function toggleBookmark(
   return { bookmarked: true };
 }
 
-export async function isBookmarked(userId: string, postId: string): Promise<boolean> {
+export async function isBookmarked(
+  userId: string,
+  postId: string,
+): Promise<boolean> {
   const { data } = await supabase
     .from("bookmarks")
     .select("id")
@@ -411,7 +437,7 @@ export async function isBookmarked(userId: string, postId: string): Promise<bool
 
 export async function toggleFollowDiscussion(
   userId: string,
-  postId: string
+  postId: string,
 ): Promise<{ following: boolean }> {
   const { data: existing } = await supabase
     .from("discussion_followers")
@@ -438,7 +464,10 @@ export async function toggleFollowDiscussion(
   return { following: true };
 }
 
-export async function isFollowingDiscussion(userId: string, postId: string): Promise<boolean> {
+export async function isFollowingDiscussion(
+  userId: string,
+  postId: string,
+): Promise<boolean> {
   const { data } = await supabase
     .from("discussion_followers")
     .select("id")
@@ -451,7 +480,7 @@ export async function isFollowingDiscussion(userId: string, postId: string): Pro
 
 export function subscribeToPostUpdates(
   postId: string,
-  callback: (payload: { eventType: string; new: DbPost }) => void
+  callback: (payload: { eventType: string; new: DbPost }) => void,
 ) {
   return supabase
     .channel(`post:${postId}`)
@@ -463,16 +492,16 @@ export function subscribeToPostUpdates(
         table: "posts",
         filter: `id=eq.${postId}`,
       },
-      (payload) => {
-        callback(payload as { eventType: string; new: DbPost });
-      }
+      (payload: { eventType: string; new: DbPost }) => {
+        callback(payload);
+      },
     )
     .subscribe();
 }
 
 export function subscribeToComments(
   postId: string,
-  callback: (payload: { eventType: string; new: DbComment }) => void
+  callback: (payload: { eventType: string; new: DbComment }) => void,
 ) {
   return supabase
     .channel(`comments:${postId}`)
@@ -484,16 +513,16 @@ export function subscribeToComments(
         table: "comments",
         filter: `post_id=eq.${postId}`,
       },
-      (payload) => {
-        callback(payload as { eventType: string; new: DbComment });
-      }
+      (payload: { eventType: string; new: DbComment }) => {
+        callback(payload);
+      },
     )
     .subscribe();
 }
 
 export function subscribeToReactions(
   postId: string,
-  callback: (payload: { eventType: string; new: DbReaction }) => void
+  callback: (payload: { eventType: string; new: DbReaction }) => void,
 ) {
   return supabase
     .channel(`reactions:${postId}`)
@@ -505,9 +534,9 @@ export function subscribeToReactions(
         table: "reactions",
         filter: `post_id=eq.${postId}`,
       },
-      (payload) => {
-        callback(payload as { eventType: string; new: DbReaction });
-      }
+      (payload: { eventType: string; new: DbReaction }) => {
+        callback(payload);
+      },
     )
     .subscribe();
 }
@@ -517,7 +546,10 @@ export function getPostShareUrl(postId: string): string {
   return `${baseUrl}#/post/${postId}`;
 }
 
-export async function sharePost(postId: string, title?: string): Promise<boolean> {
+export async function sharePost(
+  postId: string,
+  title?: string,
+): Promise<boolean> {
   const shareUrl = getPostShareUrl(postId);
   const shareTitle = title || "Check out this post on Palrene";
 
@@ -546,13 +578,19 @@ export async function sharePost(postId: string, title?: string): Promise<boolean
 
 let cachedViews = new Map<string, Set<string>>();
 
-export async function incrementViewCount(postId: string, userId?: string): Promise<void> {
+export async function incrementViewCount(
+  postId: string,
+  userId?: string,
+): Promise<void> {
   // Create a unique view key - either by user ID or session
-  const viewKey = userId || sessionStorage.getItem("palrene_session_id") || (() => {
-    const id = crypto.randomUUID();
-    sessionStorage.setItem("palrene_session_id", id);
-    return id;
-  })();
+  const viewKey =
+    userId ||
+    sessionStorage.getItem("palrene_session_id") ||
+    (() => {
+      const id = crypto.randomUUID();
+      sessionStorage.setItem("palrene_session_id", id);
+      return id;
+    })();
 
   // Check if we've already tracked this view
   if (!cachedViews.has(postId)) {
@@ -568,7 +606,9 @@ export async function incrementViewCount(postId: string, userId?: string): Promi
   postViews.add(viewKey);
 
   // Increment in database
-  const { error } = await supabase.rpc("increment_post_views", { post_id: postId });
+  const { error } = await supabase.rpc("increment_post_views", {
+    post_id: postId,
+  });
 
   if (error) {
     // Fallback: direct update

@@ -1,33 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  ArrowRight,
-  ArrowLeft,
-  Check,
-  Sparkles,
-  User,
-  AtSign,
-  Camera,
-  MapPin,
-  Briefcase,
-  Heart,
-  Link,
-  Target,
-  PartyPopper,
-  RefreshCw,
-  X,
-  Github,
-  Globe,
-  Loader,
-} from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Sparkles, User, AtSign, Camera, MapPin, Briefcase, Heart, Link, Target, PartyPopper, RefreshCw, X, Github, Globe, Loader, TriangleAlert as AlertTriangle } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import {
   getOnboardingProfile,
+  ensureOnboardingProfile,
   upsertOnboardingProfile,
   updateOnboardingStep,
   completeOnboarding,
   checkUsernameAvailable,
   generateUsernameFromName,
+  isOnboardingComplete,
+  getOnboardingStep,
   OnboardingProfile,
 } from "../../lib/onboarding";
 import { useStore } from "../../store";
@@ -123,6 +107,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   const [dir, setDir] = useState(1);
   const [saving, setSaving] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
   // Step 1 — welcome (from OAuth provider)
@@ -163,7 +148,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
   const [error, setError] = useState("");
 
-  // Load initial user data
+  // Load initial user data and resume from saved step
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -182,67 +167,102 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
       if (ghUsername) setGithub(ghUsername);
       setUsernameSuggestions(generateUsernameFromName(name || "palrene_user"));
 
-      // Check existing onboarding progress
-      const profile = await getOnboardingProfile(user.id);
-      if (profile) {
-        if (profile.profile_completed) { onComplete(); return; }
-        if (profile.onboarding_step && profile.onboarding_step > 1) {
-          setStep(profile.onboarding_step);
-        }
-        if (profile.username) setUsername(profile.username);
-        if (profile.full_name) setDisplayName(profile.full_name);
-        if (profile.avatar_url) { setAvatarUrl(profile.avatar_url); setAvatarPreview(profile.avatar_url); }
-        if (profile.bio) setBio(profile.bio);
-        if (profile.profession) setProfession(profile.profession);
-        if (profile.company) setCompany(profile.company);
-        if (profile.location) setLocation(profile.location);
-        if (profile.interests?.length) setInterests(profile.interests);
-        if (profile.skills?.length) setSkills(profile.skills);
-        if (profile.recognition_goals?.length) setGoals(profile.recognition_goals);
-        if (profile.social_links) {
-          const sl = profile.social_links as any;
-          if (sl.github) setGithub(sl.github);
-          if (sl.twitter) setTwitter(sl.twitter);
-          if (sl.linkedin) setLinkedin(sl.linkedin);
-          if (sl.website) setWebsite(sl.website);
-        }
+      // Fetch or create profile — ensures we always have a DB record
+      let profile = await ensureOnboardingProfile(user.id);
+
+      if (!profile) {
+        // Could not create profile — show error with retry
+        setLoadError("Could not load your profile. Please check your connection and try again.");
+        setInitialLoading(false);
+        return;
       }
+
+      // If profile is already complete, skip wizard
+      if (isOnboardingComplete(profile)) {
+        onComplete();
+        return;
+      }
+
+      // Resume from saved step
+      const savedStep = getOnboardingStep(profile);
+      if (savedStep > 1) {
+        setStep(savedStep);
+        setDir(1);
+      }
+
+      // Restore all saved data
+      if (profile.username) setUsername(profile.username);
+      if (profile.full_name) setDisplayName(profile.full_name);
+      if (profile.avatar_url && !profile.avatar_url.startsWith("blob:")) {
+        setAvatarUrl(profile.avatar_url);
+        setAvatarPreview(profile.avatar_url);
+      }
+      if (profile.bio) setBio(profile.bio);
+      if (profile.profession) setProfession(profile.profession);
+      if (profile.company) setCompany(profile.company);
+      if (profile.location) setLocation(profile.location);
+      if (profile.interests?.length) setInterests(profile.interests);
+      if (profile.skills?.length) setSkills(profile.skills);
+      if (profile.recognition_goals?.length) setGoals(profile.recognition_goals);
+      if (profile.social_links) {
+        const sl = profile.social_links as any;
+        if (sl.github) setGithub(sl.github);
+        if (sl.twitter) setTwitter(sl.twitter);
+        if (sl.linkedin) setLinkedin(sl.linkedin);
+        if (sl.website) setWebsite(sl.website);
+      }
+
+      setLoadError(null);
       setInitialLoading(false);
     }
     load();
   }, []);
 
-  // Username check
+  // Username check with timeout — won't block indefinitely
   useEffect(() => {
     if (!username || username.length < 3) { setUsernameStatus("idle"); return; }
     setUsernameStatus("checking");
     clearTimeout(usernameTimeout.current);
     usernameTimeout.current = setTimeout(async () => {
       const available = await checkUsernameAvailable(username);
+      // Only update if username hasn't changed since we started checking
       setUsernameStatus(available ? "available" : "taken");
     }, 500);
+
+    // Safety timeout: if check takes more than 5s, allow proceed
+    const safetyTimeout = setTimeout(() => {
+      setUsernameStatus((prev) => prev === "checking" ? "available" : prev);
+    }, 5000);
+
+    return () => clearTimeout(safetyTimeout);
   }, [username]);
 
   const handleAvatarFile = async (file: File) => {
     if (!userId) return;
     setAvatarUploading(true);
+
+    // Show local preview immediately for responsiveness
+    const localPreview = URL.createObjectURL(file);
+    setAvatarPreview(localPreview);
+
     try {
       const ext = file.name.split(".").pop();
       const path = `avatars/${userId}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(path, file, { upsert: true });
+        .upload(path, file, { uperset: true });
 
       if (uploadError) throw uploadError;
 
       const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+      // Only set the persistent URL — never blob: URLs
       setAvatarUrl(data.publicUrl);
       setAvatarPreview(data.publicUrl);
     } catch {
-      // Fallback: use local object URL for preview
-      const localUrl = URL.createObjectURL(file);
-      setAvatarPreview(localUrl);
-      setAvatarUrl(localUrl);
+      // Upload failed — keep the OAuth/default avatar, don't save blob URL
+      // User can proceed without custom avatar and add one later
+      setAvatarUrl(oauthAvatar || "");
+      setAvatarPreview(oauthAvatar || localPreview);
     } finally {
       setAvatarUploading(false);
     }
@@ -288,9 +308,20 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
     const dataToSave = stepDataMap[step] || {};
     const nextS = step + 1;
+
+    // CRITICAL: Save to DB BEFORE updating local step state
+    // This ensures progress is persisted even if browser closes mid-save
+    setSaving(true);
+    const saved = await updateOnboardingStep(userId, nextS, dataToSave);
+    setSaving(false);
+
+    if (!saved) {
+      // Save failed — still advance UI but warn user
+      setError("Could not save your progress. Check your connection — your data will be saved on the next step.");
+    }
+
     setDir(1);
     setStep(nextS);
-    saveStep(nextS, dataToSave);
   };
 
   const goBack = () => {
@@ -303,11 +334,15 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   const handleComplete = async () => {
     if (!userId) return;
     setSaving(true);
+    setError("");
+
+    // Never save blob: URLs to the DB
+    const safeAvatarUrl = avatarUrl.startsWith("blob:") ? (oauthAvatar || "") : avatarUrl;
 
     const finalData: Partial<OnboardingProfile> = {
       username: username.toLowerCase(),
       full_name: displayName,
-      avatar_url: avatarUrl,
+      avatar_url: safeAvatarUrl,
       bio,
       profession,
       company,
@@ -322,13 +357,13 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
     const success = await completeOnboarding(userId, finalData);
     if (success) {
-      // Sync into store
+      // Sync into store immediately
       setCurrentUser({
         id: userId,
         email: "",
         full_name: displayName,
         username: username.toLowerCase(),
-        avatar_url: avatarUrl,
+        avatar_url: safeAvatarUrl,
         bio,
         location,
         interests,
@@ -336,9 +371,10 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         token_balance: 100,
         subscription_tier: "Free",
       });
-      setTimeout(onComplete, 500);
+      // Call onComplete immediately — no setTimeout delay
+      onComplete();
     } else {
-      setError("Failed to save profile. Please try again.");
+      setError("Failed to save profile. Please check your connection and try again.");
     }
     setSaving(false);
   };
@@ -356,6 +392,29 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             <div className="absolute inset-0 rounded-xl border-2 border-orange-400/60 animate-ping" />
           </div>
           <p className="text-sm font-mono text-white/40 animate-pulse">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state with retry if initial load failed
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-6 max-w-sm text-center">
+          <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+            <AlertTriangle size={32} className="text-red-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white">Something went wrong</h2>
+            <p className="text-sm text-white/50 mt-2">{loadError}</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold rounded-xl hover:from-red-600 hover:to-orange-600 transition"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
