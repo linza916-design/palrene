@@ -1,6 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Heart, MessageCircle, Repeat2, Zap, Bookmark, Eye, ChevronUp, ChevronDown, Share2, MoveHorizontal as MoreHorizontal, Bell, Play } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  Repeat2,
+  Zap,
+  Bookmark,
+  Eye,
+  ChevronUp,
+  ChevronDown,
+  Share2,
+  Bell,
+  Play,
+  Flag,
+  Check,
+} from "lucide-react";
 import { Post } from "../../types";
 import SmartCommentSection from "./SmartCommentSection";
 import { useStore } from "../../store";
@@ -26,8 +40,19 @@ interface ExpandablePostCardProps {
   onOpenModal?: () => void;
 }
 
-export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePostCardProps) {
-  const { currentUser, likePost, repostPost, boostPost, startConversation, toggleFollow, profiles } = useStore();
+export default function ExpandablePostCard({
+  post,
+  onOpenModal,
+}: ExpandablePostCardProps) {
+  const {
+    currentUser,
+    likePost,
+    repostPost,
+    boostPost,
+    startConversation,
+    toggleFollow,
+    profiles,
+  } = useStore();
   const [expanded, setExpanded] = useState(false);
   const [showProfileCard, setShowProfileCard] = useState(false);
   const [sensitiveRevealed, setSensitiveRevealed] = useState(false);
@@ -37,9 +62,50 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
   const [following, setFollowing] = useState(false);
   const [postData, setPostData] = useState<PostWithProfile | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showReportMenu, setShowReportMenu] = useState(false);
+  const [reportSubmitted, setReportSubmitted] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const shouldBlur = post.is_sensitive && !sensitiveRevealed;
+
+  const REPORT_REASONS = [
+    "Spam",
+    "Harassment",
+    "Hate speech",
+    "Misinformation",
+    "Inappropriate content",
+    "Other",
+  ];
+
+  const handleReport = async (reason: string) => {
+    if (!currentUser) return;
+    setShowReportMenu(false);
+    try {
+      await supabase.from("reports").insert({
+        reporter_id: currentUser.id,
+        reported_post_id: post.id,
+        reported_user_id: post.userId,
+        reason,
+        status: "pending",
+      });
+      setReportSubmitted(true);
+      setTimeout(() => setReportSubmitted(false), 3000);
+    } catch (err) {
+      console.error("Report failed:", err);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (reportRef.current && !reportRef.current.contains(e.target as Node)) {
+        setShowReportMenu(false);
+      }
+    };
+    if (showReportMenu)
+      document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showReportMenu]);
 
   useEffect(() => {
     const loadInteractionStates = async () => {
@@ -58,11 +124,14 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
 
     loadInteractionStates();
 
-    const postChannel = subscribeToPostUpdates(post.id, ({ eventType, new: updatedPost }) => {
-      if (eventType === "UPDATE") {
-        setPostData((prev) => (prev ? { ...prev, ...updatedPost } : null));
-      }
-    });
+    const postChannel = subscribeToPostUpdates(
+      post.id,
+      ({ eventType, new: updatedPost }) => {
+        if (eventType === "UPDATE") {
+          setPostData((prev) => (prev ? { ...prev, ...updatedPost } : null));
+        }
+      },
+    );
 
     const reactionsChannel = subscribeToReactions(post.id, () => {
       getPostById(post.id).then((updated) => {
@@ -128,8 +197,13 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
       const { reacted } = await toggleReaction(currentUser.id, post.id);
       setPostData((prev) =>
         prev
-          ? { ...prev, likes_count: reacted ? prev.likes_count + 1 : Math.max(0, prev.likes_count - 1) }
-          : null
+          ? {
+              ...prev,
+              likes_count: reacted
+                ? prev.likes_count + 1
+                : Math.max(0, prev.likes_count - 1),
+            }
+          : null,
       );
     }
   };
@@ -165,7 +239,10 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
     e.stopPropagation();
     if (!currentUser || actionLoading) return;
     setActionLoading(true);
-    const { bookmarked: newStatus } = await toggleBookmark(currentUser.id, post.id);
+    const { bookmarked: newStatus } = await toggleBookmark(
+      currentUser.id,
+      post.id,
+    );
     setBookmarked(newStatus);
     setActionLoading(false);
   };
@@ -174,7 +251,10 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
     e.stopPropagation();
     if (!currentUser || actionLoading) return;
     setActionLoading(true);
-    const { following: newStatus } = await toggleFollowDiscussion(currentUser.id, post.id);
+    const { following: newStatus } = await toggleFollowDiscussion(
+      currentUser.id,
+      post.id,
+    );
     setFollowing(newStatus);
     setActionLoading(false);
   };
@@ -197,13 +277,15 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
       className={`relative overflow-hidden transition-all duration-300 ${
         expanded ? "rounded-3xl" : "rounded-3xl mb-5"
       } bg-white/80 dark:bg-zinc-950/50 backdrop-blur-sm border border-neutral-100 dark:border-neutral-900/60 shadow-sm hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-orange-500/3 group ${
-        post.boosted ? "ring-1 ring-orange-500/25 bg-gradient-to-br from-red-500/[0.02] to-orange-500/[0.02] dark:from-red-950/[0.04] dark:to-orange-950/[0.04]" : ""
+        post.boosted
+          ? "ring-1 ring-orange-500/25 bg-linear-to-br from-red-500/2 to-orange-500/2 dark:from-red-950/4 dark:to-orange-950/4"
+          : ""
       }`}
       whileHover={!expanded ? { y: -1 } : undefined}
     >
       {/* Boosted badge */}
       {post.boosted && (
-        <div className="absolute top-0 right-0 px-3 py-1 text-[8px] font-mono font-bold tracking-widest text-white uppercase bg-gradient-to-r from-red-500 to-orange-500 rounded-bl-xl z-10 flex items-center gap-1">
+        <div className="absolute top-0 right-0 px-3 py-1 text-[8px] font-mono font-bold tracking-widest text-white uppercase bg-linear-to-r from-red-500 to-orange-500 rounded-bl-xl z-10 flex items-center gap-1">
           <Zap size={8} className="fill-current animate-bounce" />
           <span>Boosted</span>
         </div>
@@ -223,6 +305,8 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
               <img
                 src={post.profile.avatar_url}
                 alt={post.profile.full_name}
+                width={44}
+                height={44}
                 className="w-11 h-11 rounded-full object-cover border border-neutral-150 dark:border-neutral-850 hover:scale-102 transition shadow-sm"
               />
               {authorProfile?.is_active && (
@@ -242,6 +326,8 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
                       <img
                         src={authorProfile.avatar_url}
                         alt={authorProfile.full_name}
+                        width={48}
+                        height={48}
                         className="w-12 h-12 rounded-full object-cover border border-orange-500/20"
                       />
                       {currentUser && currentUser.id !== authorProfile.id && (
@@ -250,7 +336,7 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
                             e.stopPropagation();
                             toggleFollow(authorProfile.id);
                           }}
-                          className="px-2.5 py-1 text-[10px] font-bold text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-full"
+                          className="px-2.5 py-1 text-[10px] font-bold text-white bg-linear-to-r from-red-500 to-orange-500 rounded-full"
                         >
                           Follow
                         </button>
@@ -260,17 +346,28 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
                       <h5 className="text-xs font-bold text-neutral-800 dark:text-white flex items-center gap-1">
                         {authorProfile.full_name}
                         {authorProfile.is_verified && (
-                          <span className="text-[10px] text-blue-500 font-bold">✓</span>
+                          <span className="text-[10px] text-blue-500 font-bold">
+                            ✓
+                          </span>
                         )}
                       </h5>
-                      <p className="text-[9px] text-neutral-400 font-mono">@{authorProfile.username}</p>
+                      <p className="text-[9px] text-neutral-400 font-mono">
+                        @{authorProfile.username}
+                      </p>
                       <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-1.5 line-clamp-2 italic">
-                        "{authorProfile.bio || 'Navigating connections without boundaries.'}"
+                        "
+                        {authorProfile.bio ||
+                          "Navigating connections without boundaries."}
+                        "
                       </p>
                     </div>
                     <div className="flex justify-between border-t border-neutral-200 dark:border-neutral-800 pt-2 text-[9px] font-mono text-neutral-400">
-                      <span>{authorProfile.followers_count || 0} Followers</span>
-                      <span>{authorProfile.following_count || 0} Following</span>
+                      <span>
+                        {authorProfile.followers_count || 0} Followers
+                      </span>
+                      <span>
+                        {authorProfile.following_count || 0} Following
+                      </span>
                     </div>
                   </motion.div>
                 )}
@@ -323,44 +420,84 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
         {/* Content */}
         <div
           ref={contentRef}
-          className={`px-5 text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed font-sans select-text break-words cursor-text relative ${
-            shouldBlur ? "blur-md select-none hover:blur-sm contrast-125 saturate-50" : ""
+          className={`px-5 text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed font-sans select-text wrap-break-word cursor-text relative ${
+            shouldBlur
+              ? "blur-md select-none hover:blur-sm contrast-125 saturate-50"
+              : ""
           }`}
         >
           {shouldBlur && (
-            <div className="absolute inset-0 z-30 bg-black/5 backdrop-blur-sm pointer-events-none flex items-center justify-center">
-              <span className="flex items-center gap-1 bg-neutral-950/90 text-white border border-white/10 px-3 py-1 rounded-full text-[9px] font-mono">
-                <Eye size={10} /> Double-click to reveal
+            <button
+              type="button"
+              onClick={() => setSensitiveRevealed(true)}
+              className="absolute inset-0 z-30 bg-black/20 backdrop-blur-[2px] flex items-center justify-center w-full"
+            >
+              <span className="flex items-center gap-1.5 bg-neutral-950/90 text-white border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-medium">
+                <Eye size={11} /> Sensitive — tap to reveal
               </span>
-            </div>
+            </button>
           )}
-          <p className={expanded ? "line-clamp-none" : "line-clamp-4"}>{post.content}</p>
+          <p className={expanded ? "line-clamp-none" : "line-clamp-4"}>
+            {post.content}
+          </p>
         </div>
 
         {/* Media */}
         {post.media_urls && post.media_urls.length > 0 && (
-          <div
-            onDoubleClick={handleDoubleClick}
-            className={`mt-3 px-5 grid ${
-              post.media_urls.length === 1 ? "grid-cols-1" : "grid-cols-2"
-            } gap-2`}
-          >
-            {post.media_urls.slice(0, expanded ? undefined : 2).map((url, i) => (
-              <img
-                key={i}
-                src={url}
-                alt=""
-                className={`w-full object-cover rounded-xl max-h-80 ${
-                  shouldBlur ? "blur-md" : ""
-                } ${post.media_urls!.length > 2 && !expanded && i === 1 ? "opacity-50" : ""}`}
-                referrerPolicy="no-referrer"
-              />
-            ))}
-            {post.media_urls.length > 2 && !expanded && (
-              <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] font-mono px-2 py-0.5 rounded-full">
-                +{post.media_urls.length - 2} more
-              </div>
+          <div className="mt-3 px-5 relative">
+            {shouldBlur && (
+              <button
+                type="button"
+                onClick={() => setSensitiveRevealed(true)}
+                className="absolute inset-0 z-10 rounded-xl bg-black/30 backdrop-blur-sm flex items-center justify-center"
+              >
+                <span className="flex items-center gap-1.5 bg-neutral-950/90 text-white border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-medium">
+                  <Eye size={11} /> Tap to reveal media
+                </span>
+              </button>
             )}
+            <div
+              onDoubleClick={handleDoubleClick}
+              className={`grid ${
+                post.media_urls.length === 1 ? "grid-cols-1" : "grid-cols-2"
+              } gap-2`}
+            >
+              {post.media_urls
+                .slice(0, expanded ? undefined : 2)
+                .map((url, i) => {
+                  const isVideo =
+                    /\.(mp4|webm|mov|ogg)(\?|$)/i.test(url) ||
+                    url.includes("video");
+                  return isVideo ? (
+                    <video
+                      key={i}
+                      src={url}
+                      controls
+                      playsInline
+                      className={`w-full rounded-xl max-h-80 bg-black ${
+                        shouldBlur ? "blur-md" : ""
+                      } ${post.media_urls!.length > 2 && !expanded && i === 1 ? "opacity-50" : ""}`}
+                    />
+                  ) : (
+                    <img
+                      key={i}
+                      src={url}
+                      alt=""
+                      width={400}
+                      height={320}
+                      className={`w-full object-cover rounded-xl max-h-80 ${
+                        shouldBlur ? "blur-md" : ""
+                      } ${post.media_urls!.length > 2 && !expanded && i === 1 ? "opacity-50" : ""}`}
+                      referrerPolicy="no-referrer"
+                    />
+                  );
+                })}
+              {post.media_urls.length > 2 && !expanded && (
+                <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] font-mono px-2 py-0.5 rounded-full">
+                  +{post.media_urls.length - 2} more
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -390,10 +527,15 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
               whileTap={{ scale: 0.88 }}
             >
               <motion.div
-                animate={liked ? { scale: [1, 1.5, 1], rotate: [0, -15, 15, 0] } : {}}
+                animate={
+                  liked ? { scale: [1, 1.5, 1], rotate: [0, -15, 15, 0] } : {}
+                }
                 transition={{ duration: 0.4 }}
               >
-                <Heart size={15} className={liked ? "fill-current text-red-500" : ""} />
+                <Heart
+                  size={15}
+                  className={liked ? "fill-current text-red-500" : ""}
+                />
               </motion.div>
               <span>{currentLikes}</span>
             </motion.button>
@@ -412,11 +554,14 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
             {/* Repost */}
             <motion.button
               onClick={handleRepost}
-              className={`flex items-center space-x-1.5 outline-none transition-colors hidden sm:flex ${reposted ? "text-green-500" : "hover:text-green-500"}`}
+              className={`flex items-center space-x-1.5 outline-none transition-colors sm:flex ${reposted ? "text-green-500" : "hover:text-green-500"}`}
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.88 }}
             >
-              <motion.div animate={reposted ? { rotate: [0, 360] } : {}} transition={{ duration: 0.5 }}>
+              <motion.div
+                animate={reposted ? { rotate: [0, 360] } : {}}
+                transition={{ duration: 0.5 }}
+              >
                 <Repeat2 size={16} />
               </motion.div>
               <span>{currentReposts}</span>
@@ -431,7 +576,14 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
                 whileHover={post.boosted ? {} : { scale: 1.08 }}
                 whileTap={post.boosted ? {} : { scale: 0.88 }}
               >
-                <Zap size={14} className={post.boosted ? "fill-current text-yellow-400 animate-pulse" : ""} />
+                <Zap
+                  size={14}
+                  className={
+                    post.boosted
+                      ? "fill-current text-yellow-400 animate-pulse"
+                      : ""
+                  }
+                />
                 <span>{post.boosted ? "Boosted" : "Boost"}</span>
               </motion.button>
             )}
@@ -446,7 +598,10 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
-              <Bookmark size={14} className={bookmarked ? "fill-current" : ""} />
+              <Bookmark
+                size={14}
+                className={bookmarked ? "fill-current" : ""}
+              />
             </motion.button>
             <motion.button
               onClick={handleFollowDiscussion}
@@ -465,6 +620,44 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
             >
               <Share2 size={14} />
             </motion.button>
+
+            {/* Report */}
+            {currentUser && currentUser.id !== post.userId && (
+              <div ref={reportRef} className="relative">
+                <motion.button
+                  onClick={() => setShowReportMenu((v) => !v)}
+                  className={`p-1.5 rounded-full transition ${reportSubmitted ? "text-green-500" : "text-neutral-400 hover:text-red-500"}`}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  {reportSubmitted ? <Check size={14} /> : <Flag size={14} />}
+                </motion.button>
+                <AnimatePresence>
+                  {showReportMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                      transition={{ duration: 0.12 }}
+                      className="absolute bottom-8 right-0 z-50 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl overflow-hidden min-w-40"
+                    >
+                      <p className="px-3 py-2 text-[10px] font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide border-b border-neutral-100 dark:border-neutral-800">
+                        Report reason
+                      </p>
+                      {REPORT_REASONS.map((reason) => (
+                        <button
+                          key={reason}
+                          onClick={() => handleReport(reason)}
+                          className="w-full text-left px-3 py-2 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 transition-colors"
+                        >
+                          {reason}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -491,8 +684,11 @@ export default function ExpandablePostCard({ post, onOpenModal }: ExpandablePost
                   Open in focus mode →
                 </button>
               </div>
-              <div className="max-h-[350px] overflow-hidden rounded-2xl bg-neutral-50/50 dark:bg-neutral-900/30 p-4 border border-neutral-100 dark:border-neutral-850">
-                <SmartCommentSection postId={post.id} commentsCount={currentComments} />
+              <div className="max-h-87.5 overflow-hidden rounded-2xl bg-neutral-50/50 dark:bg-neutral-900/30 p-4 border border-neutral-100 dark:border-neutral-850">
+                <SmartCommentSection
+                  postId={post.id}
+                  commentsCount={currentComments}
+                />
               </div>
             </div>
           </motion.div>

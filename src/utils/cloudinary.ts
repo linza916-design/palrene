@@ -4,7 +4,47 @@
  * Utilizes environments: VITE_CLOUDINARY_CLOUD_NAME & VITE_CLOUDINARY_UPLOAD_PRESET
  */
 
+// Upload size limits
+export const UPLOAD_LIMITS = {
+  image: {
+    maxSize: 10 * 1024 * 1024, // 10MB
+    allowedTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+  },
+  video: {
+    maxSize: 100 * 1024 * 1024, // 100MB
+    allowedTypes: ["video/mp4", "video/webm", "video/quicktime"],
+  },
+};
+
+export function validateFile(file: File): { valid: boolean; error?: string } {
+  const isImage = file.type.startsWith("image/");
+  const isVideo = file.type.startsWith("video/");
+
+  if (!isImage && !isVideo) {
+    return { valid: false, error: "Only images and videos are allowed." };
+  }
+
+  const limits = isImage ? UPLOAD_LIMITS.image : UPLOAD_LIMITS.video;
+
+  if (!limits.allowedTypes.includes(file.type)) {
+    return { valid: false, error: `File type ${file.type} is not supported.` };
+  }
+
+  if (file.size > limits.maxSize) {
+    const maxMB = limits.maxSize / (1024 * 1024);
+    return { valid: false, error: `File size exceeds ${maxMB}MB limit.` };
+  }
+
+  return { valid: true };
+}
+
 export async function uploadToCloudinary(file: File): Promise<string> {
+  // Validate file before upload
+  const validation = validateFile(file);
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
   const cloudName = (import.meta as any).env?.VITE_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = (import.meta as any).env?.VITE_CLOUDINARY_UPLOAD_PRESET;
 

@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Smile, Image as ImageIcon, Loader as Loader2, AtSign } from "lucide-react";
+import {
+  Smile,
+  Image as ImageIcon,
+  Loader as Loader2,
+  AtSign,
+} from "lucide-react";
 import { useStore } from "../../store";
 
 interface MentionsInputProps {
@@ -46,7 +51,7 @@ export default function MentionsInput({
   useEffect(() => {
     if (!inputRef.current) return;
 
-    const cursorPos = inputRef.current.selectionStart;
+    const cursorPos = inputRef.current.selectionStart ?? value.length;
     const textBeforeCursor = value.slice(0, cursorPos);
     const lastAtIndex = textBeforeCursor.lastIndexOf("@");
 
@@ -73,14 +78,14 @@ export default function MentionsInput({
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setSelectedMentionIndex((prev) =>
-          prev < filteredProfiles.length - 1 ? prev + 1 : 0
+          prev < filteredProfiles.length - 1 ? prev + 1 : 0,
         );
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedMentionIndex((prev) =>
-          prev > 0 ? prev - 1 : filteredProfiles.length - 1
+          prev > 0 ? prev - 1 : filteredProfiles.length - 1,
         );
         return;
       }
@@ -101,10 +106,16 @@ export default function MentionsInput({
     }
   };
 
-  const selectMention = (profile: { username?: string; full_name?: string }) => {
+  const selectMention = (profile: {
+    username?: string;
+    full_name?: string;
+  }) => {
     if (mentionStartPos === null) return;
 
-    const username = profile.username || profile.full_name?.split(" ").join("").toLowerCase() || "";
+    const username =
+      profile.username ||
+      profile.full_name?.split(" ").join("").toLowerCase() ||
+      "";
     const newValue =
       value.slice(0, mentionStartPos) +
       `@${username} ` +
@@ -146,11 +157,15 @@ export default function MentionsInput({
 
           {/* Formatting hints */}
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-neutral-400">
-            <AtSign size={12} className="cursor-pointer hover:text-orange-500 transition" onClick={() => {
-              const pos = inputRef.current?.selectionStart || value.length;
-              onChange(value.slice(0, pos) + "@" + value.slice(pos));
-              setTimeout(() => inputRef.current?.focus(), 0);
-            }} />
+            <AtSign
+              size={12}
+              className="cursor-pointer hover:text-orange-500 transition"
+              onClick={() => {
+                const pos = inputRef.current?.selectionStart || value.length;
+                onChange(value.slice(0, pos) + "@" + value.slice(pos));
+                setTimeout(() => inputRef.current?.focus(), 0);
+              }}
+            />
           </div>
         </div>
       </div>

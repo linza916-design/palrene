@@ -1,220 +1,213 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useStore } from "../../store";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, Smile, Image as ImageIcon, Circle as HelpCircle, Loader, Zap, Eye, X, CirclePlay as PlayCircle } from "lucide-react";
+import {
+  Plus,
+  Image as ImageIcon,
+  Upload,
+  Loader as Loader2,
+  Zap,
+  Eye,
+  X,
+  Sparkles,
+} from "lucide-react";
+import { AppCard, Avatar, Button, EmptyState, Skeleton } from "../ui";
 import ExpandablePostCard from "../feed/ExpandablePostCard";
 import PostModal from "../feed/PostModal";
-import FeedFilters from "../feed/FeedFilters";
 import GifModal from "../modals/GifModal";
 import UnsplashModal from "../modals/UnsplashModal";
-import { SponsoredPost, RewardModal, TokenWallet } from "../rewards";
-import { createPost, getFeedPosts } from "../../lib/posts";
-import { rewardPostCreation, updateDailyStreak, getUserTokens, type UserTokens } from "../../lib/tokens";
+import { SponsoredPost, RewardModal } from "../rewards";
+import { createPost } from "../../lib/posts";
+import {
+  getUserTokens,
+  updateDailyStreak,
+  type UserTokens,
+} from "../../lib/tokens";
+import { uploadToCloudinary } from "../../utils/cloudinary";
 
 export default function HomeFeed() {
-  const { currentUser, posts, searchQuery, searchFilter } = useStore();
+  const { currentUser, posts, searchQuery } = useStore();
   const [expanded, setExpanded] = useState(false);
   const [content, setContent] = useState("");
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
-  const [giphyUrl, setGiphyUrl] = useState<string | undefined>(undefined);
+  const [giphyUrl, setGiphyUrl] = useState<string | undefined>();
   const [isSensitive, setIsSensitive] = useState(false);
-  const [showQuizBuilder, setShowQuizBuilder] = useState(false);
-  const [quizQuestion, setQuizQuestion] = useState("");
-  const [quizOptions, setQuizOptions] = useState<string[]>(["", ""]);
   const [gifOpen, setGifOpen] = useState(false);
   const [unsplashOpen, setUnsplashOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [includeBlurred, setIncludeBlurred] = useState(true);
   const [posting, setPosting] = useState(false);
-
-  // Modal state
   const [modalPostId, setModalPostId] = useState<string | null>(null);
-
-  // Token/reward state
   const [userTokens, setUserTokens] = useState<UserTokens | null>(null);
   const [showRewardModal, setShowRewardModal] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("all");
 
-  // Infinite scroll state
-  const [displayedPosts, setDisplayedPosts] = useState<typeof posts>([]);
   const [visibleCount, setVisibleCount] = useState(10);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
 
-  // Filter posts
+  const handleDeviceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setUploadingMedia(true);
+    try {
+      const urls = await Promise.all(files.map((f) => uploadToCloudinary(f)));
+      setMediaUrls((prev) => [...prev, ...urls].slice(0, 4));
+    } catch (err) {
+      console.error("Media upload failed:", err);
+    } finally {
+      setUploadingMedia(false);
+      if (mediaInputRef.current) mediaInputRef.current.value = "";
+    }
+  };
+
+  const categories = [
+    { id: "all", label: "All" },
+    { id: "relationships", label: "Relationships" },
+    { id: "music", label: "Music" },
+    { id: "travel", label: "Travel" },
+    { id: "science", label: "Science" },
+  ];
+
   const filteredPosts = posts.filter((post) => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const contentMatches = post.content.toLowerCase().includes(q);
-      const userMatches =
-        post.profile.full_name?.toLowerCase().includes(q) ||
-        post.profile.username?.toLowerCase().includes(q);
-      if (!contentMatches && !userMatches) return false;
+      if (
+        !post.content.toLowerCase().includes(q) &&
+        !post.profile.full_name?.toLowerCase().includes(q) &&
+        !post.profile.username?.toLowerCase().includes(q)
+      ) {
+        return false;
+      }
     }
-
-    if (selectedCategory !== "all") {
-      const tag = selectedCategory.toLowerCase();
-      const contentMatchesTag =
-        post.content.toLowerCase().includes(`#${tag}`) ||
-        post.content.toLowerCase().includes(tag);
-      if (!contentMatchesTag) return false;
-    }
-
-    if (post.is_sensitive && !includeBlurred) {
+    if (
+      activeCategory !== "all" &&
+      post.category?.toLowerCase() !== activeCategory
+    ) {
       return false;
     }
-
     return true;
   });
 
-  // Update displayed posts when filtered posts change
-  useEffect(() => {
-    setDisplayedPosts(filteredPosts.slice(0, visibleCount));
-  }, [filteredPosts, visibleCount]);
-
-  // Load tokens and update streak on mount
   useEffect(() => {
     if (!currentUser) return;
-
     getUserTokens(currentUser.id).then(setUserTokens);
-
-    updateDailyStreak(currentUser.id).then((result) => {
-      if (result.success && result.bonus && result.bonus > 0) {
-        // Refresh tokens after streak update
-        getUserTokens(currentUser.id).then(setUserTokens);
-      }
+    updateDailyStreak(currentUser.id).then(() => {
+      getUserTokens(currentUser.id).then(setUserTokens);
     });
   }, [currentUser]);
 
-  // Infinite scroll observer
   useEffect(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-
+    if (observerRef.current) observerRef.current.disconnect();
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && visibleCount < filteredPosts.length) {
           setVisibleCount((prev) => Math.min(prev + 5, filteredPosts.length));
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
-
-    if (loadMoreRef.current) {
-      observerRef.current.observe(loadMoreRef.current);
-    }
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
+    if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
+    return () => observerRef.current?.disconnect();
   }, [visibleCount, filteredPosts.length]);
-
-  const handleFocus = () => {
-    setExpanded(true);
-  };
-
-  const handleAddQuizOption = () => {
-    if (quizOptions.length < 4) {
-      setQuizOptions([...quizOptions, ""]);
-    }
-  };
-
-  const handleRemovalQuizOption = (idx: number) => {
-    setQuizOptions(quizOptions.filter((_, i) => i !== idx));
-  };
-
-  const handleQuizOptionChange = (idx: number, val: string) => {
-    const updated = [...quizOptions];
-    updated[idx] = val;
-    setQuizOptions(updated);
-  };
 
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser || (!content.trim() && mediaUrls.length === 0 && !giphyUrl) || posting) return;
+    if (
+      !currentUser ||
+      (!content.trim() && mediaUrls.length === 0 && !giphyUrl) ||
+      posting
+    )
+      return;
 
     setPosting(true);
-    let quizPayload = undefined;
-    if (
-      showQuizBuilder &&
-      quizQuestion.trim() &&
-      quizOptions.filter((o) => o.trim()).length >= 2
-    ) {
-      quizPayload = {
-        question: quizQuestion.trim(),
-        options: quizOptions.filter((o) => o.trim()),
-        votes: quizOptions.filter((o) => o.trim()).map(() => 0),
-      };
-    }
+    try {
+      await createPost(currentUser.id, content.trim(), {
+        media_urls: mediaUrls.length > 0 ? mediaUrls : undefined,
+        giphy_url: giphyUrl,
+        is_sensitive: isSensitive,
+      });
 
-    const newPost = await createPost(currentUser.id, content.trim(), {
-      media_urls: mediaUrls.length > 0 ? mediaUrls : undefined,
-      giphy_url: giphyUrl,
-      is_sensitive: isSensitive,
-      quiz: quizPayload,
-    });
-
-    if (newPost) {
-      // Reset form
+      useStore
+        .getState()
+        .createPost(
+          content.trim(),
+          mediaUrls.length > 0 ? mediaUrls : undefined,
+          giphyUrl,
+          undefined,
+          isSensitive,
+        );
       setContent("");
       setMediaUrls([]);
       setGiphyUrl(undefined);
       setIsSensitive(false);
-      setShowQuizBuilder(false);
-      setQuizQuestion("");
-      setQuizOptions(["", ""]);
       setExpanded(false);
-
-      // Refresh feed by calling store's createPost
-      useStore.getState().createPost(
-        content.trim(),
-        mediaUrls.length > 0 ? mediaUrls : undefined,
-        giphyUrl,
-        undefined,
-        isSensitive,
-        quizPayload
-      );
-
-      // Reward tokens for post creation
-      if (currentUser) {
-        await rewardPostCreation(currentUser.id, newPost.id);
-        const updatedTokens = await getUserTokens(currentUser.id);
-        setUserTokens(updatedTokens);
-      }
+    } catch (err) {
+      console.error("Post creation error:", err);
     }
-
     setPosting(false);
   };
 
-  const handleOpenModal = (postId: string) => {
-    setModalPostId(postId);
-  };
-
-  const handleCloseModal = () => {
-    setModalPostId(null);
-  };
-
   return (
-    <div className="flex-1 max-w-xl mx-auto p-4 sm:p-5 space-y-5 h-[calc(100vh-70px)] overflow-y-auto pb-24 md:pb-6">
-      {/* Post creation */}
+    <div className="flex-1 max-w-2xl mx-auto p-4 sm:p-6 space-y-6 h-[calc(100vh-62px)] overflow-y-auto pb-24 md:pb-6">
+      {/* Token Balance Header */}
+      {currentUser && userTokens && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between p-4 rounded-2xl bg-linear-to-r from-amber-500/10 via-orange-500/5 to-red-500/10 border border-amber-500/20"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-neutral-900 dark:text-white">
+                {userTokens.balance.toLocaleString()} tokens
+              </p>
+              {userTokens.current_streak > 1 && (
+                <p className="text-xs text-orange-500 font-medium">
+                  {userTokens.current_streak} day streak
+                </p>
+              )}
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowRewardModal(true)}
+          >
+            Earn More
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Create Post Card */}
       {currentUser && (
-        <div className="p-4 bg-white/70 dark:bg-zinc-950/45 border border-neutral-150/40 dark:border-neutral-900 rounded-3xl shadow-sm transition">
+        <AppCard variant="glass" padding="md">
           <form onSubmit={handlePublish} className="space-y-4">
-            <div className="flex items-start space-x-3">
-              <img
-                src={currentUser.avatar_url}
-                alt={currentUser.full_name}
-                className="w-10 h-10 rounded-full object-cover border border-neutral-100 dark:border-neutral-800"
+            <input
+              ref={mediaInputRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              className="hidden"
+              onChange={handleDeviceUpload}
+            />
+            <div className="flex items-start gap-3">
+              <Avatar
+                src={currentUser.avatar_url || ""}
+                alt={currentUser.full_name || "User"}
+                size="md"
               />
               <div className="flex-1">
                 <textarea
-                  placeholder="Share a cinematic resonance, vintage jazz track, or whisper your thoughts..."
+                  placeholder="Share your thoughts, discover connections..."
                   value={content}
-                  onFocus={handleFocus}
+                  onFocus={() => setExpanded(true)}
                   onChange={(e) => setContent(e.target.value)}
-                  className="w-full min-h-12 p-1.5 text-xs text-neutral-840 dark:text-white bg-transparent outline-none border-none placeholder-neutral-400 focus:ring-0 resize-none font-sans"
+                  className="w-full min-h-15 p-3 text-sm text-neutral-800 dark:text-neutral-200 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 placeholder:text-neutral-400 resize-none focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                  aria-label="Post content"
                 />
               </div>
             </div>
@@ -225,227 +218,221 @@ export default function HomeFeed() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden space-y-4 pt-2 border-t border-neutral-100 dark:border-neutral-900/60"
+                  className="overflow-hidden space-y-4 border-t border-neutral-100 dark:border-neutral-800 pt-4"
                 >
-                  {/* Preview attachments */}
-                  {mediaUrls.length > 0 && (
-                    <div className="flex gap-2 p-1.5 overflow-x-auto bg-neutral-50 dark:bg-neutral-900/40 rounded-xl max-h-24">
-                      {mediaUrls.map((url, i) => (
-                        <div
-                          key={i}
-                          className="relative aspect-video w-24 rounded-lg overflow-hidden border border-neutral-200 shrink-0"
-                        >
+                  {/* Media Preview */}
+                  {(mediaUrls.length > 0 || giphyUrl) && (
+                    <div className="flex gap-2 flex-wrap">
+                      {mediaUrls.map((url, i) => {
+                        const isVideo =
+                          /\.(mp4|webm|mov|ogg)(\?|$)/i.test(url) ||
+                          url.includes("video");
+                        return (
+                          <div
+                            key={i}
+                            className="relative w-20 h-20 rounded-xl overflow-hidden group bg-black"
+                          >
+                            {isVideo ? (
+                              <video
+                                src={url}
+                                className="w-full h-full object-cover"
+                                muted
+                              />
+                            ) : (
+                              <img
+                                src={url}
+                                alt="Attachment"
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setMediaUrls(mediaUrls.filter((u) => u !== url))
+                              }
+                              className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                            >
+                              <X className="w-4 h-4 text-white" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                      {giphyUrl && (
+                        <div className="relative w-20 h-20 rounded-xl overflow-hidden group">
                           <img
-                            src={url}
-                            alt="Attachment"
-                            className="object-cover w-full h-full"
-                            referrerPolicy="no-referrer"
+                            src={giphyUrl}
+                            alt="GIF"
+                            className="w-full h-full object-cover"
                           />
                           <button
                             type="button"
-                            onClick={() => setMediaUrls(mediaUrls.filter((u) => u !== url))}
-                            className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white hover:bg-black/90"
+                            onClick={() => setGiphyUrl(undefined)}
+                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
                           >
-                            <X size={10} />
+                            <X className="w-4 h-4 text-white" />
                           </button>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {giphyUrl && (
-                    <div className="relative inline-block border border-neutral-200 dark:border-neutral-850 rounded-xl overflow-hidden aspect-video w-36 bg-neutral-950">
-                      <img
-                        src={giphyUrl}
-                        alt="GIF"
-                        className="object-cover w-full h-full"
-                        referrerPolicy="no-referrer"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setGiphyUrl(undefined)}
-                        className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white hover:bg-black/95"
-                      >
-                        <X size={10} />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Quiz builder */}
-                  {showQuizBuilder && (
-                    <div className="p-4 bg-neutral-50 dark:bg-zinc-900/60 border border-neutral-200/50 dark:border-neutral-850 rounded-2xl space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono text-neutral-400 uppercase">
-                          Interactive Inquiry builder
-                        </span>
-                        <button type="button" onClick={() => setShowQuizBuilder(false)} className="text-neutral-400 hover:text-white p-0.5">
-                          <X size={12} />
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Inquire: e.g. What is your favorite rain song?"
-                        value={quizQuestion}
-                        onChange={(e) => setQuizQuestion(e.target.value)}
-                        className="w-full text-xs p-2 rounded-lg border border-neutral-200 bg-white placeholder-neutral-400 dark:bg-black dark:border-neutral-850 dark:text-white"
-                      />
-                      <div className="space-y-2">
-                        {quizOptions.map((opt, oIdx) => (
-                          <div key={oIdx} className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              placeholder={`Option ${oIdx + 1}`}
-                              value={opt}
-                              onChange={(e) => handleQuizOptionChange(oIdx, e.target.value)}
-                              className="flex-1 text-xs p-1.5 rounded-lg border border-neutral-200 bg-white dark:bg-black dark:border-neutral-850 dark:text-white"
-                            />
-                            {quizOptions.length > 2 && (
-                              <button type="button" onClick={() => handleRemovalQuizOption(oIdx)} className="text-neutral-400 hover:text-red-500">
-                                <X size={14} />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                      {quizOptions.length < 4 && (
-                        <button type="button" onClick={handleAddQuizOption} className="text-[10px] font-mono text-orange-500 hover:underline">
-                          + Add Inquiry Option
-                        </button>
                       )}
                     </div>
                   )}
 
-                  {/* Controls */}
-                  <div className="flex items-center justify-between pt-1">
-                    <div className="flex items-center space-x-2">
-                      <button type="button" onClick={() => setUnsplashOpen(true)} className="p-2 transition rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 text-neutral-450 hover:text-orange-500 dark:text-neutral-400">
-                        <ImageIcon size={16} />
-                      </button>
-                      <button type="button" onClick={() => setGifOpen(true)} className="p-2 transition rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 text-neutral-450 hover:text-orange-500 dark:text-neutral-400">
-                        <Smile size={16} />
-                      </button>
-                      <button type="button" onClick={() => setShowQuizBuilder(true)} className="p-2 transition rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 text-neutral-450 hover:text-orange-500 dark:text-neutral-400">
-                        <HelpCircle size={16} />
-                      </button>
-                      <button type="button" onClick={() => setIsSensitive(!isSensitive)} className={`flex items-center gap-1 px-2.5 py-1 text-[9px] font-mono rounded-full border transition-all ${isSensitive ? "bg-red-500/10 text-red-500 border-red-500/25" : "bg-neutral-50 dark:bg-neutral-900 text-neutral-450 border-neutral-200/50 dark:border-neutral-850 hover:text-red-500 hover:border-red-500/20"}`}>
-                        <Eye size={10} />
-                        <span>Blurred</span>
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        loading={uploadingMedia}
+                        onClick={() => mediaInputRef.current?.click()}
+                        icon={<Upload className="w-4 h-4" />}
+                      >
+                        Upload
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setUnsplashOpen(true)}
+                        icon={<ImageIcon className="w-4 h-4" />}
+                      >
+                        Photo
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setGifOpen(true)}
+                        icon={<Sparkles className="w-4 h-4" />}
+                      >
+                        GIF
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => setIsSensitive(!isSensitive)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border transition-all ${
+                          isSensitive
+                            ? "bg-red-500/10 border-red-500/20 text-red-500"
+                            : "border-neutral-200 dark:border-neutral-700 text-neutral-500 hover:border-red-500/20 hover:text-red-500"
+                        }`}
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        Sensitive
                       </button>
                     </div>
 
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => setExpanded(false)} className="px-3.5 py-1 text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setExpanded(false)}
+                      >
                         Cancel
-                      </button>
-                      <button type="submit" disabled={(!content.trim() && mediaUrls.length === 0 && !giphyUrl) || posting} className="px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider text-white bg-linear-to-r from-red-500 to-orange-500 rounded-xl hover:from-red-650 hover:to-orange-550 transition shadow disabled:opacity-40">
-                        {posting ? <Loader size={12} className="animate-spin" /> : "Resonate Post"}
-                      </button>
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={
+                          (!content.trim() &&
+                            mediaUrls.length === 0 &&
+                            !giphyUrl) ||
+                          posting
+                        }
+                        loading={posting}
+                      >
+                        Post
+                      </Button>
                     </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </form>
-        </div>
+        </AppCard>
       )}
 
-      {/* Filters */}
-      <FeedFilters
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        showSensitive={includeBlurred}
-        onToggleSensitive={() => setIncludeBlurred(!includeBlurred)}
-      />
+      {/* Category Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setActiveCategory(cat.id)}
+            className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all duration-200 ${
+              activeCategory === cat.id
+                ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900"
+                : "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+            }`}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
 
-      {/* Posts feed */}
-      <div className="space-y-5">
-        {/* Token wallet - compact */}
-        {currentUser && userTokens && (
-          <div className="flex items-center justify-between bg-gradient-to-r from-yellow-400/10 to-orange-500/10 border border-yellow-500/20 rounded-xl p-3">
-            <div className="flex items-center gap-2">
-              <Zap size={16} className="text-yellow-500" />
-              <span className="text-sm font-semibold text-neutral-800 dark:text-white">
-                {userTokens.balance} tokens
-              </span>
-              {userTokens.current_streak > 1 && (
-                <span className="text-[10px] text-orange-500 font-mono ml-1">
-                  🔥 {userTokens.current_streak} day streak
-                </span>
-              )}
-            </div>
-            <button
-              onClick={() => setShowRewardModal(true)}
-              className="text-[10px] font-mono text-orange-500 hover:text-orange-600 transition"
-            >
-              Earn more
-            </button>
-          </div>
-        )}
-
-        {displayedPosts.length === 0 ? (
-          <div className="text-center py-20 text-xs text-neutral-400 dark:text-neutral-600 font-mono">
-            <p>No ripples matching this frequency.</p>
-            <p className="mt-1 text-neutral-300 dark:text-neutral-700">Try a different filter or create a post.</p>
-          </div>
+      {/* Posts Feed */}
+      <div className="space-y-4">
+        {filteredPosts.length === 0 ? (
+          <EmptyState
+            title="No posts yet"
+            description="Be the first to share something with the community"
+            icon={<Plus className="w-6 h-6" />}
+            action={
+              <Button onClick={() => setExpanded(true)}>Create Post</Button>
+            }
+          />
         ) : (
-          displayedPosts.map((post, index) => {
-            // Insert sponsored post every 6 posts
-            const shouldShowAd = (index + 1) % 6 === 0 && index > 0;
-
-            return (
-              <React.Fragment key={post.id}>
+          filteredPosts.slice(0, visibleCount).map((post, index) => (
+            <React.Fragment key={post.id}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
                 <ExpandablePostCard
                   post={post}
-                  onOpenModal={() => handleOpenModal(post.id)}
+                  onOpenModal={() => setModalPostId(post.id)}
                 />
-                {shouldShowAd && <SponsoredPost />}
-              </React.Fragment>
-            );
-          })
+              </motion.div>
+              {(index + 1) % 6 === 0 && index > 0 && <SponsoredPost />}
+            </React.Fragment>
+          ))
         )}
 
-        {/* Load more trigger */}
+        {/* Load More */}
         {visibleCount < filteredPosts.length && (
-          <div ref={loadMoreRef} className="flex items-center justify-center py-4">
-            <Loader size={16} className="animate-spin text-neutral-400" />
-          </div>
-        )}
-
-        {/* End of feed */}
-        {visibleCount >= filteredPosts.length && filteredPosts.length > 0 && (
-          <div className="flex items-center justify-center py-4 text-[10px] font-mono text-neutral-400">
-            You've reached the end of the feed
+          <div ref={loadMoreRef} className="flex justify-center py-4">
+            <div className="flex items-center gap-2 text-neutral-400">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-xs">Loading more...</span>
+            </div>
           </div>
         )}
       </div>
 
-      {/* GIF modal */}
+      {/* Modals */}
       <GifModal
         isOpen={gifOpen}
         onClose={() => setGifOpen(false)}
-        onSelect={(url) => setGiphyUrl(url)}
+        onSelect={setGiphyUrl}
       />
-
-      {/* Unsplash modal */}
       <UnsplashModal
         isOpen={unsplashOpen}
         onClose={() => setUnsplashOpen(false)}
         onSelectMultiple={(urls) => setMediaUrls([...mediaUrls, ...urls])}
       />
-
-      {/* Post modal */}
       <AnimatePresence>
-        {modalPostId && <PostModal postId={modalPostId} onClose={handleCloseModal} />}
+        {modalPostId && (
+          <PostModal
+            postId={modalPostId}
+            onClose={() => setModalPostId(null)}
+          />
+        )}
       </AnimatePresence>
-
-      {/* Reward modal */}
       <RewardModal
         isOpen={showRewardModal}
         onClose={() => setShowRewardModal(false)}
         onComplete={async () => {
           if (currentUser) {
-            const updatedTokens = await getUserTokens(currentUser.id);
-            setUserTokens(updatedTokens);
+            getUserTokens(currentUser.id).then(setUserTokens);
           }
         }}
       />

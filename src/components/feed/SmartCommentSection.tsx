@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Send, ChevronDown, ChevronUp, Heart, MoveHorizontal as MoreHorizontal, Loader as Loader2 } from "lucide-react";
+import {
+  Send,
+  ChevronDown,
+  ChevronUp,
+  Heart,
+  MoveHorizontal as MoreHorizontal,
+  Loader as Loader2,
+} from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import {
   getComments,
@@ -45,30 +52,35 @@ export default function SmartCommentSection({
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [totalComments, setTotalComments] = useState(initialCount);
-  const [typingUsers, setTypingUsers] = useState<{ user_id: string; username: string; avatar_url: string }[]>([]);
+  const [typingUsers, setTypingUsers] = useState<
+    { user_id: string; username: string; avatar_url: string }[]
+  >([]);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadComments = useCallback(async (reset = false) => {
-    if (reset) {
-      setLoading(true);
-      setComments([]);
-    } else {
-      setLoadingMore(true);
-    }
+  const loadComments = useCallback(
+    async (reset = false) => {
+      if (reset) {
+        setLoading(true);
+        setComments([]);
+      } else {
+        setLoadingMore(true);
+      }
 
-    const offset = reset ? 0 : comments.length;
-    const fetched = await getComments(postId, offset, 5);
+      const offset = reset ? 0 : comments.length;
+      const fetched = await getComments(postId, offset, 5);
 
-    if (reset) {
-      setComments(fetched);
-      setLoading(false);
-    } else {
-      setComments((prev) => [...prev, ...fetched]);
-      setLoadingMore(false);
-    }
+      if (reset) {
+        setComments(fetched);
+        setLoading(false);
+      } else {
+        setComments((prev) => [...prev, ...fetched]);
+        setLoadingMore(false);
+      }
 
-    setHasMore(fetched.length === 5);
-  }, [postId, comments.length]);
+      setHasMore(fetched.length === 5);
+    },
+    [postId, comments.length],
+  );
 
   useEffect(() => {
     loadComments(true);
@@ -105,7 +117,7 @@ export default function SmartCommentSection({
       clearTimeout(typingTimeoutRef.current);
     }
 
-    setTyping(currentUser.id, postId, {
+    setTyping(postId, {
       id: currentUser.id,
       username: currentUser.username,
       avatar_url: currentUser.avatar_url,
@@ -128,10 +140,17 @@ export default function SmartCommentSection({
     if (!commentText.trim() || !currentUser || submitting) return;
 
     setSubmitting(true);
-    const newComment = await createComment(currentUser.id, postId, commentText.trim());
+    const newComment = await createComment(
+      currentUser.id,
+      postId,
+      commentText.trim(),
+    );
 
     if (newComment) {
-      setComments((prev) => [{ ...newComment, profiles: newComment.profiles as any }, ...prev]);
+      setComments((prev) => [
+        { ...newComment, profiles: newComment.profiles as any },
+        ...prev,
+      ]);
       setTotalComments((prev) => prev + 1);
       onCommentsCountChange?.(totalComments + 1);
       setCommentText("");
@@ -144,8 +163,13 @@ export default function SmartCommentSection({
     setSort(newSort);
     const sorted = [...comments].sort((a, b) => {
       if (newSort === "top") return b.likes_count - a.likes_count;
-      if (newSort === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (newSort === "newest")
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      return (
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
     });
     setComments(sorted);
   };
@@ -192,7 +216,10 @@ export default function SmartCommentSection({
 
       {/* Comment input */}
       {currentUser && (
-        <form onSubmit={handleSubmitComment} className="flex gap-2 items-center">
+        <form
+          onSubmit={handleSubmitComment}
+          className="flex gap-2 items-center"
+        >
           <img
             src={currentUser.avatar_url}
             alt={currentUser.full_name}
@@ -211,7 +238,11 @@ export default function SmartCommentSection({
               disabled={!commentText.trim() || submitting}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 text-orange-500 hover:text-orange-600 disabled:opacity-40 disabled:pointer-events-none transition"
             >
-              {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              {submitting ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Send size={14} />
+              )}
             </button>
           </div>
         </form>
@@ -240,8 +271,8 @@ export default function SmartCommentSection({
               {typingUsers.length === 1
                 ? `${typingUsers[0].username} is typing`
                 : typingUsers.length === 2
-                ? `${typingUsers[0].username} and ${typingUsers[1].username} are typing`
-                : `${typingUsers[0].username} and ${typingUsers.length - 1} others are typing`}
+                  ? `${typingUsers[0].username} and ${typingUsers[1].username} are typing`
+                  : `${typingUsers[0].username} and ${typingUsers.length - 1} others are typing`}
               <span className="inline-flex ml-0.5">
                 <span className="animate-pulse">.</span>
                 <span className="animate-pulse delay-75">.</span>
@@ -253,7 +284,7 @@ export default function SmartCommentSection({
       </AnimatePresence>
 
       {/* Comments list */}
-      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+      <div className="space-y-4 max-h-100 overflow-y-auto pr-1">
         <AnimatePresence>
           {comments.map((comment) => (
             <CommentWithReplies
@@ -261,6 +292,7 @@ export default function SmartCommentSection({
               comment={comment}
               postId={postId}
               currentUserId={currentUser?.id}
+              currentUser={currentUser ?? undefined}
             />
           ))}
         </AnimatePresence>
@@ -296,7 +328,9 @@ export default function SmartCommentSection({
       {comments.length === 0 && !loading && (
         <div className="text-center py-6 text-xs text-neutral-400 dark:text-neutral-600">
           <p>No comments yet.</p>
-          <p className="mt-0.5 text-neutral-300 dark:text-neutral-700">Be the first to share your thoughts.</p>
+          <p className="mt-0.5 text-neutral-300 dark:text-neutral-700">
+            Be the first to share your thoughts.
+          </p>
         </div>
       )}
     </div>
@@ -307,10 +341,12 @@ function CommentWithReplies({
   comment,
   postId,
   currentUserId,
+  currentUser,
 }: {
   comment: CommentWithProfile;
   postId: string;
   currentUserId?: string;
+  currentUser?: { avatar_url?: string | null };
 }) {
   const [showReplies, setShowReplies] = useState(false);
   const [replies, setReplies] = useState<CommentWithProfile[]>([]);
@@ -353,7 +389,11 @@ function CommentWithReplies({
 
   const handleLike = async () => {
     if (!currentUserId) return;
-    const { reacted } = await toggleReaction(currentUserId, undefined, comment.id);
+    const { reacted } = await toggleReaction(
+      currentUserId,
+      undefined,
+      comment.id,
+    );
     setLiked(reacted);
     setLikesCount((prev) => (reacted ? prev + 1 : Math.max(0, prev - 1)));
   };
@@ -363,7 +403,12 @@ function CommentWithReplies({
     if (!replyText.trim() || !currentUserId || submittingReply) return;
 
     setSubmittingReply(true);
-    const newReply = await createComment(currentUserId, postId, replyText.trim(), comment.id);
+    const newReply = await createComment(
+      currentUserId,
+      postId,
+      replyText.trim(),
+      comment.id,
+    );
 
     if (newReply) {
       setReplies((prev) => [...prev, newReply]);
@@ -412,7 +457,7 @@ function CommentWithReplies({
                 {timeAgo(comment.created_at)}
               </span>
             </div>
-            <p className="text-[11px] text-neutral-600 dark:text-neutral-300 mt-1 leading-relaxed break-words">
+            <p className="text-[11px] text-neutral-600 dark:text-neutral-300 mt-1 leading-relaxed wrap-break-word">
               {comment.content}
             </p>
           </div>
@@ -443,9 +488,14 @@ function CommentWithReplies({
                 onClick={loadReplies}
                 className="flex items-center gap-1 hover:text-orange-500 transition"
               >
-                {showReplies ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                {showReplies ? (
+                  <ChevronUp size={11} />
+                ) : (
+                  <ChevronDown size={11} />
+                )}
                 <span>
-                  {comment.replies_count} {comment.replies_count === 1 ? "reply" : "replies"}
+                  {comment.replies_count}{" "}
+                  {comment.replies_count === 1 ? "reply" : "replies"}
                 </span>
               </button>
             )}
@@ -478,7 +528,11 @@ function CommentWithReplies({
                   disabled={!replyText.trim() || submittingReply}
                   className="text-orange-500 hover:text-orange-600 disabled:opacity-40"
                 >
-                  {submittingReply ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                  {submittingReply ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Send size={12} />
+                  )}
                 </button>
               </motion.form>
             )}
@@ -495,7 +549,10 @@ function CommentWithReplies({
               >
                 {loadingReplies && replies.length === 0 ? (
                   <div className="flex items-center justify-center py-2">
-                    <Loader2 size={14} className="animate-spin text-neutral-400" />
+                    <Loader2
+                      size={14}
+                      className="animate-spin text-neutral-400"
+                    />
                   </div>
                 ) : (
                   replies.map((reply) => (
@@ -510,7 +567,7 @@ function CommentWithReplies({
                           <span className="font-semibold text-neutral-700 dark:text-neutral-300">
                             {reply.profiles?.full_name}
                           </span>
-                          <p className="text-neutral-600 dark:text-neutral-400 mt-0.5 break-words">
+                          <p className="text-neutral-600 dark:text-neutral-400 mt-0.5 wrap-break-word">
                             {reply.content}
                           </p>
                         </div>

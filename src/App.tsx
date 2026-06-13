@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "./lib/supabase";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "motion/react";
@@ -29,15 +29,17 @@ import SettingsPanel from "./components/settings/SettingsPanel";
 import NotificationsPanel from "./components/notifications/NotificationsPanel";
 import SearchPanel from "./components/search/SearchPanel";
 
-import AdminDashboard from "./components/admin/AdminDashboard";
-
-import PolyChat from "./components/ai/PolyChat";
-
 import AuthModal from "./components/modals/AuthModal";
 
 import PostDetail from "./components/feed/PostDetail";
 import PostModal from "./components/feed/PostModal";
 import OnboardingWizard from "./components/onboarding/OnboardingWizard";
+
+import { ErrorBoundary, NetworkStatus, Skeleton } from "./components/ui";
+
+// Lazy load heavy components for code splitting
+const AdminDashboard = lazy(() => import("./components/admin/AdminDashboard"));
+const PolyChat = lazy(() => import("./components/ai/PolyChat"));
 
 type AppPhase = "loading" | "landing" | "onboarding" | "main";
 
@@ -156,7 +158,8 @@ export default function App() {
         useStore.getState().setCurrentUser({
           id: user.id,
           email: user.email ?? "",
-          full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
+          full_name:
+            user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
           username: "",
           avatar_url: user.user_metadata?.avatar_url ?? "",
         });
@@ -177,8 +180,8 @@ export default function App() {
           location: profile.location,
           interests: profile.interests,
           recognition_goals: profile.recognition_goals,
-          token_balance: profile.token_balance,
-          subscription_tier: profile.subscription_tier as any,
+          token_balance: (profile as any).token_balance,
+          subscription_tier: (profile as any).subscription_tier,
         });
         setPhase("main");
       } else {
@@ -186,25 +189,34 @@ export default function App() {
         useStore.getState().setCurrentUser({
           id: user.id,
           email: user.email ?? "",
-          full_name: profile.full_name ?? user.user_metadata?.full_name ?? user.user_metadata?.name ?? "",
+          full_name:
+            profile.full_name ??
+            user.user_metadata?.full_name ??
+            user.user_metadata?.name ??
+            "",
           username: profile.username ?? "",
-          avatar_url: profile.avatar_url ?? user.user_metadata?.avatar_url ?? "",
+          avatar_url:
+            profile.avatar_url ?? user.user_metadata?.avatar_url ?? "",
         });
         setPhase("onboarding");
       }
     };
 
     // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      resolvePhase(session);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }: { data: { session: Session | null } }) => {
+        resolvePhase(session);
+      });
 
     // Listen for auth changes (sign in, sign out, token refresh)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      resolvePhase(session);
-    });
+    } = supabase.auth.onAuthStateChange(
+      async (_event: AuthChangeEvent, session: Session | null) => {
+        resolvePhase(session);
+      },
+    );
 
     return () => {
       isMounted = false;
@@ -214,7 +226,9 @@ export default function App() {
 
   const handleOnboardingComplete = async () => {
     // Re-derive state from DB after onboarding completes
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (session?.user) {
       const profile = await getOnboardingProfile(session.user.id);
       if (profile && isOnboardingComplete(profile)) {
@@ -228,8 +242,8 @@ export default function App() {
           location: profile.location,
           interests: profile.interests,
           recognition_goals: profile.recognition_goals,
-          token_balance: profile.token_balance,
-          subscription_tier: profile.subscription_tier as any,
+          token_balance: (profile as any).token_balance,
+          subscription_tier: (profile as any).subscription_tier,
         });
       }
     }
@@ -273,10 +287,40 @@ export default function App() {
           ["kamyavince@gmail.com"].includes(
             currentUser?.email?.toLowerCase() ?? "",
           );
-        return isUserAdmin ? <AdminDashboard /> : <HomeFeed />;
+        return isUserAdmin ? (
+          <Suspense
+            fallback={
+              <div className="flex-1 flex items-center justify-center p-8">
+                <div className="space-y-4 w-full max-w-md">
+                  <Skeleton variant="rectangular" className="h-12 w-full" />
+                  <Skeleton variant="card" className="w-full" />
+                  <Skeleton variant="card" className="w-full" />
+                </div>
+              </div>
+            }
+          >
+            <AdminDashboard />
+          </Suspense>
+        ) : (
+          <HomeFeed />
+        );
       }
       case "ai-poly":
-        return <PolyChat />;
+        return (
+          <Suspense
+            fallback={
+              <div className="flex-1 flex items-center justify-center p-8">
+                <div className="space-y-4 w-full max-w-md">
+                  <Skeleton variant="rectangular" className="h-32 w-full" />
+                  <Skeleton variant="text" className="w-3/4" />
+                  <Skeleton variant="text" className="w-1/2" />
+                </div>
+              </div>
+            }
+          >
+            <PolyChat />
+          </Suspense>
+        );
       case "post-detail":
         return <PostDetail />;
       default:
@@ -323,20 +367,28 @@ export default function App() {
 
   // Phase: Main app
   return (
-    <div className="min-h-screen flex flex-col text-neutral-800 dark:text-neutral-100 transition-colors duration-300">
-      <GlobalBackground />
-      <Topbar />
-      <div className="flex-1 flex max-w-7xl mx-auto w-full relative">
-        <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0">{renderActiveView()}</div>
+    <ErrorBoundary>
+      <NetworkStatus />
+      <div className="min-h-screen flex flex-col text-neutral-800 dark:text-neutral-100 transition-colors duration-300">
+        <GlobalBackground />
+        <Topbar />
+        <div className="flex-1 flex max-w-7xl mx-auto w-full relative">
+          <Sidebar />
+          <div className="flex-1 flex flex-col min-w-0">
+            {renderActiveView()}
+          </div>
+        </div>
+        <MobileNav />
+        {registrationStep > 0 && <AuthModal isOpen={true} onClose={() => {}} />}
+        <AnimatePresence>
+          {modalPostId && (
+            <PostModal
+              postId={modalPostId}
+              onClose={() => setModalPostId(null)}
+            />
+          )}
+        </AnimatePresence>
       </div>
-      <MobileNav />
-      {registrationStep > 0 && <AuthModal isOpen={true} onClose={() => {}} />}
-      <AnimatePresence>
-        {modalPostId && (
-          <PostModal postId={modalPostId} onClose={() => setModalPostId(null)} />
-        )}
-      </AnimatePresence>
-    </div>
+    </ErrorBoundary>
   );
 }

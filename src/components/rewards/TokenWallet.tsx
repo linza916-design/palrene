@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Zap, TrendingUp, TrendingDown, Clock, Gift, Flame, ChevronRight, History, Sparkles } from "lucide-react";
+import {
+  Zap,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  Gift,
+  Flame,
+  ChevronRight,
+  History,
+  Sparkles,
+} from "lucide-react";
 import { useStore } from "../../store";
 import {
   getUserTokens,
@@ -23,16 +33,23 @@ export default function TokenWallet({ compact = false }: TokenWalletProps) {
   const [loading, setLoading] = useState(true);
   const [showRewardModal, setShowRewardModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [adStatus, setAdStatus] = useState({ canWatch: true, adsWatched: 0, remaining: 20 });
+  const [adStatus, setAdStatus] = useState({
+    canWatch: true,
+    adsWatched: 0,
+    remaining: 20,
+  });
 
   useEffect(() => {
     if (!currentUser) return;
 
     loadData();
 
-    const subscription = subscribeToTokenUpdates(currentUser.id, (updatedTokens) => {
-      setTokens(updatedTokens);
-    });
+    const subscription = subscribeToTokenUpdates(
+      currentUser.id,
+      (updatedTokens) => {
+        setTokens(updatedTokens);
+      },
+    );
 
     return () => {
       subscription.unsubscribe();
@@ -70,7 +87,7 @@ export default function TokenWallet({ compact = false }: TokenWalletProps) {
     return `${days}d`;
   };
 
-  const getSourceIcon = (source: string) => {
+  const getSourceIcon = (source: string, amount?: number) => {
     switch (source) {
       case "rewarded_ad":
         return <Gift size={12} className="text-purple-500" />;
@@ -84,7 +101,7 @@ export default function TokenWallet({ compact = false }: TokenWalletProps) {
       case "premium_reaction":
         return <Sparkles size={12} className="text-blue-500" />;
       default:
-        return amount >= 0 ? (
+        return (amount ?? 0) >= 0 ? (
           <TrendingUp size={12} className="text-green-500" />
         ) : (
           <TrendingDown size={12} className="text-red-500" />
@@ -107,7 +124,7 @@ export default function TokenWallet({ compact = false }: TokenWalletProps) {
       <>
         <button
           onClick={() => setShowRewardModal(true)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-400/10 to-orange-500/10 border border-yellow-500/20 rounded-full hover:border-orange-500/40 transition"
+          className="flex items-center gap-2 px-3 py-1.5 bg-linear-to-r from-yellow-400/10 to-orange-500/10 border border-yellow-500/20 rounded-full hover:border-orange-500/40 transition"
         >
           <Zap size={14} className="text-yellow-500" />
           <span className="text-xs font-semibold text-neutral-800 dark:text-white">
@@ -128,7 +145,7 @@ export default function TokenWallet({ compact = false }: TokenWalletProps) {
     <>
       <div className="bg-white/80 dark:bg-zinc-950/50 backdrop-blur-sm border border-neutral-100 dark:border-neutral-900/60 rounded-2xl overflow-hidden">
         {/* Header with balance */}
-        <div className="p-5 bg-gradient-to-br from-orange-500/5 to-yellow-500/5 dark:from-orange-500/3 dark:to-yellow-500/3">
+        <div className="p-5 bg-linear-to-br from-orange-500/5 to-yellow-500/5 dark:from-orange-500/3 dark:to-yellow-500/3">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-neutral-800 dark:text-white flex items-center gap-2">
               <Zap className="text-yellow-500" size={18} />
@@ -194,7 +211,7 @@ export default function TokenWallet({ compact = false }: TokenWalletProps) {
             disabled={!adStatus.canWatch}
             className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition ${
               adStatus.canWatch
-                ? "bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
+                ? "bg-linear-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600"
                 : "bg-neutral-100 dark:bg-neutral-900 text-neutral-400 cursor-not-allowed"
             }`}
           >
@@ -225,7 +242,7 @@ export default function TokenWallet({ compact = false }: TokenWalletProps) {
                     className="flex items-center justify-between py-2 border-b border-neutral-50 dark:border-neutral-900 last:border-0"
                   >
                     <div className="flex items-center gap-2">
-                      {getSourceIcon(tx.source)}
+                      {getSourceIcon(tx.source, tx.amount)}
                       <div>
                         <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
                           {tx.description || tx.source.replace(/_/g, " ")}

@@ -47,6 +47,7 @@ export type TokenSource =
   | "profile_boost"
   | "premium_reaction"
   | "creator_tip"
+  | "profile_audit"
   | "purchase"
   | "admin_grant";
 
@@ -66,7 +67,9 @@ export const REWARD_AMOUNTS: Record<string, number> = {
 
 export const DAILY_AD_LIMIT = 20;
 
-export async function getUserTokens(userId: string): Promise<UserTokens | null> {
+export async function getUserTokens(
+  userId: string,
+): Promise<UserTokens | null> {
   const { data, error } = await supabase
     .from("user_tokens")
     .select("*")
@@ -81,7 +84,9 @@ export async function getUserTokens(userId: string): Promise<UserTokens | null> 
   return data;
 }
 
-export async function getOrCreateUserTokens(userId: string): Promise<UserTokens> {
+export async function getOrCreateUserTokens(
+  userId: string,
+): Promise<UserTokens> {
   let tokens = await getUserTokens(userId);
 
   if (!tokens) {
@@ -105,7 +110,7 @@ export async function getOrCreateUserTokens(userId: string): Promise<UserTokens>
     tokens = data;
   }
 
-  return tokens;
+  return tokens as UserTokens;
 }
 
 export async function addTokens(
@@ -113,7 +118,7 @@ export async function addTokens(
   amount: number,
   source: TokenSource,
   description?: string,
-  referenceId?: string
+  referenceId?: string,
 ): Promise<{ success: boolean; newBalance?: number; error?: string }> {
   const { data, error } = await supabase.rpc("add_user_tokens", {
     target_user_id: userId,
@@ -140,7 +145,7 @@ export async function spendTokens(
   amount: number,
   source: TokenSource,
   description?: string,
-  referenceId?: string
+  referenceId?: string,
 ): Promise<{ success: boolean; newBalance?: number; error?: string }> {
   const { data, error } = await supabase.rpc("spend_user_tokens", {
     target_user_id: userId,
@@ -162,9 +167,12 @@ export async function spendTokens(
   };
 }
 
-export async function updateDailyStreak(
-  userId: string
-): Promise<{ success: boolean; streak?: number; bonus?: number; error?: string }> {
+export async function updateDailyStreak(userId: string): Promise<{
+  success: boolean;
+  streak?: number;
+  bonus?: number;
+  error?: string;
+}> {
   const { data, error } = await supabase.rpc("update_daily_streak", {
     target_user_id: userId,
   });
@@ -185,7 +193,7 @@ export async function updateDailyStreak(
 export async function getTokenTransactions(
   userId: string,
   limit = 50,
-  offset = 0
+  offset = 0,
 ): Promise<TokenTransaction[]> {
   const { data, error } = await supabase
     .from("token_transactions")
@@ -203,7 +211,7 @@ export async function getTokenTransactions(
 }
 
 export async function getDailyAdLimits(
-  userId: string
+  userId: string,
 ): Promise<DailyAdLimits | null> {
   const today = new Date().toISOString().split("T")[0];
 
@@ -222,7 +230,9 @@ export async function getDailyAdLimits(
   return data;
 }
 
-export async function canWatchAd(userId: string): Promise<{ canWatch: boolean; adsWatched: number; remaining: number }> {
+export async function canWatchAd(
+  userId: string,
+): Promise<{ canWatch: boolean; adsWatched: number; remaining: number }> {
   const limits = await getDailyAdLimits(userId);
   const adsWatched = limits?.ads_watched || 0;
   const canWatch = adsWatched < DAILY_AD_LIMIT;
@@ -237,7 +247,7 @@ export async function canWatchAd(userId: string): Promise<{ canWatch: boolean; a
 export async function recordAdEvent(
   userId: string,
   completed: boolean,
-  rewardAmount = REWARD_AMOUNTS.rewarded_ad
+  rewardAmount = REWARD_AMOUNTS.rewarded_ad,
 ): Promise<{ success: boolean; reward?: number; error?: string }> {
   const verificationToken = crypto.randomUUID();
 
@@ -269,7 +279,7 @@ export async function recordAdEvent(
     rewardAmount,
     "rewarded_ad",
     "Watched rewarded ad",
-    adEvent.id
+    adEvent.id,
   );
 
   if (!result.success) {
@@ -279,42 +289,57 @@ export async function recordAdEvent(
   return { success: true, reward: rewardAmount };
 }
 
-export async function rewardPostCreation(userId: string, postId: string): Promise<boolean> {
+export async function rewardPostCreation(
+  userId: string,
+  postId: string,
+): Promise<boolean> {
   const result = await addTokens(
     userId,
     REWARD_AMOUNTS.post_creation,
     "post_creation",
     "Created a new post",
-    postId
+    postId,
   );
   return result.success;
 }
 
-export async function rewardComment(userId: string, commentId: string): Promise<boolean> {
+export async function rewardComment(
+  userId: string,
+  commentId: string,
+): Promise<boolean> {
   const result = await addTokens(
     userId,
     REWARD_AMOUNTS.helpful_comment,
     "helpful_comment",
     "Helpful comment received",
-    commentId
+    commentId,
   );
   return result.success;
 }
 
-export async function spendForBoost(userId: string, postId: string): Promise<{ success: boolean; error?: string }> {
+export async function spendForBoost(
+  userId: string,
+  postId: string,
+): Promise<{ success: boolean; error?: string }> {
   const result = await spendTokens(
     userId,
     Math.abs(REWARD_AMOUNTS.boost_post),
     "boost_post",
     "Boosted post for visibility",
-    postId
+    postId,
   );
   return { success: result.success, error: result.error };
 }
 
+type RealtimePayload<T> = {
+  new?: T;
+  old?: T;
+  [key: string]: any;
+};
+
 export function subscribeToTokenUpdates(
   userId: string,
-  callback: (tokens: UserTokens) => void
+  callback: (tokens: UserTokens) => void,
 ) {
   return supabase
     .channel(`tokens:${userId}`)
@@ -326,9 +351,9 @@ export function subscribeToTokenUpdates(
         table: "user_tokens",
         filter: `user_id=eq.${userId}`,
       },
-      (payload) => {
+      (payload: RealtimePayload<UserTokens>) => {
         callback(payload.new as UserTokens);
-      }
+      },
     )
     .subscribe();
 }

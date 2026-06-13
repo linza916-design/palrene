@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { rateLimit, getRateLimitHeaders } from "../rate-limit";
 
 export default async function handler(req: any, res: any) {
   // Guard clause for HTTP Methods
@@ -7,6 +8,25 @@ export default async function handler(req: any, res: any) {
       error: "Method not allowed",
     });
   }
+
+  // Rate limiting: 15 requests per minute per IP
+  const clientIp = req.headers["x-forwarded-for"] || req.connection?.remoteAddress || "unknown";
+  const { success, remaining, resetAt } = rateLimit(`recommend:${clientIp}`, {
+    windowMs: 60000,
+    maxRequests: 15,
+  });
+
+  if (!success) {
+    return res.status(429).json({
+      error: "Too many requests. Please wait before continuing.",
+      retryAfter: Math.ceil((resetAt - Date.now()) / 1000),
+    });
+  }
+
+  // Set rate limit headers
+  Object.entries(getRateLimitHeaders(remaining, resetAt)).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
 
   try {
     const apiKey = process.env.GEMINI_API_KEY;

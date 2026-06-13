@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import { rateLimit, getRateLimitHeaders } from "../rate-limit";
 
 dotenv.config();
 
@@ -57,6 +58,21 @@ async function startServer() {
   // ===== POLY CHAT =====
 
   app.post("/api/poly/chat", async (req, res) => {
+    // Rate limiting
+    const clientIp = req.headers["x-forwarded-for"] || req.connection?.remoteAddress || "unknown";
+    const { success, remaining, resetAt } = rateLimit(`chat:${clientIp}`, { windowMs: 60000, maxRequests: 20 });
+
+    if (!success) {
+      return res.status(429).json({
+        error: "Too many requests. Please wait before continuing.",
+        retryAfter: Math.ceil((resetAt - Date.now()) / 1000),
+      });
+    }
+
+    Object.entries(getRateLimitHeaders(remaining, resetAt)).forEach(([key, value]) => {
+      res.setHeader(key, value);
+    });
+
     try {
       if (!ai) {
         return res.status(500).json({
@@ -115,6 +131,21 @@ async function startServer() {
   // ===== POLY SUGGEST REPLY =====
 
   app.post("/api/poly/suggest-reply", async (req, res) => {
+    // Rate limiting
+    const clientIp = req.headers["x-forwarded-for"] || req.connection?.remoteAddress || "unknown";
+    const { success, remaining, resetAt } = rateLimit(`suggest:${clientIp}`, { windowMs: 60000, maxRequests: 30 });
+
+    if (!success) {
+      return res.status(429).json({
+        error: "Too many requests. Please wait before continuing.",
+        retryAfter: Math.ceil((resetAt - Date.now()) / 1000),
+      });
+    }
+
+    Object.entries(getRateLimitHeaders(remaining, resetAt)).forEach(([key, value]) => {
+      res.setHeader(key, value);
+    });
+
     try {
       if (!ai) {
         return res.status(500).json({
@@ -168,6 +199,21 @@ ${contextText}`,
   // ===== POLY RECOMMEND =====
 
   app.post("/api/poly/recommend", async (req, res) => {
+    // Rate limiting
+    const clientIp = req.headers["x-forwarded-for"] || req.connection?.remoteAddress || "unknown";
+    const { success, remaining, resetAt } = rateLimit(`recommend:${clientIp}`, { windowMs: 60000, maxRequests: 20 });
+
+    if (!success) {
+      return res.status(429).json({
+        error: "Too many requests. Please wait before continuing.",
+        retryAfter: Math.ceil((resetAt - Date.now()) / 1000),
+      });
+    }
+
+    Object.entries(getRateLimitHeaders(remaining, resetAt)).forEach(([key, value]) => {
+      res.setHeader(key, value);
+    });
+
     try {
       if (!ai) {
         return res.status(500).json({

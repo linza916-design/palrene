@@ -13,17 +13,6 @@ import {
   TokenTransaction,
   RelationshipStatus,
 } from "./types";
-import {
-  mockProfiles,
-  mockPosts,
-  mockGroups,
-  mockComments,
-  mockConversations,
-  mockMessages,
-  mockNotifications,
-  mockConnections,
-  mockTokenTransactions,
-} from "./mockData";
 import { supabase } from "./lib/supabase";
 
 interface PalreneState {
@@ -107,7 +96,7 @@ interface PalreneState {
     source: TokenTransaction["source"],
     description: string,
   ) => Promise<boolean>;
-  claimDailyReward: () => boolean;
+  claimDailyReward: () => Promise<boolean>;
   watchRewardedAd: () => void;
 
   // Chat Actions
@@ -168,68 +157,23 @@ const getStoredData = (key: string, fallback: any) => {
   }
 };
 
-const setStoredData = (key: string, data: any) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (e) {
-    console.error("Local storage sync error", e);
-  }
-};
-
 export const useStore = create<PalreneState>((set, get) => ({
-  currentUser: getStoredData("palrene_current_user", null),
-  profiles: getStoredData("palrene_profiles", mockProfiles),
-  posts: getStoredData("palrene_posts", mockPosts),
-  groups: getStoredData("palrene_groups", mockGroups),
-  conversations: getStoredData("palrene_conversations", mockConversations),
-  messages: getStoredData("palrene_messages", mockMessages),
-  notifications: getStoredData("palrene_notifications", mockNotifications),
-  connections: getStoredData("palrene_connections", mockConnections),
-  tokenTransactions: getStoredData(
-    "palrene_token_transactions",
-    mockTokenTransactions,
-  ),
-  lastDailyReward: getStoredData("palrene_last_daily_reward", null),
-  ads: getStoredData("palrene_ads", [
-    {
-      id: "ad-1",
-      title: "Resonance Sound Therapy",
-      description:
-        "Experience absolute peace with guided frequency bathing. Get 20% off for Palrene members.",
-      link_url: "https://example.com/resonance",
-      image_url:
-        "https://images.unsplash.com/photo-1518244979147-3b77e9eb2e0d?w=300&auto=format&fit=crop&q=80",
-      status: "approved",
-      created_by: "user-1",
-      created_at: "2026-05-28T09:00:00Z",
-    },
-  ]),
-  payments: getStoredData("palrene_payments", [
-    {
-      id: "tx-mock-1",
-      userId: "user-1",
-      userName: "Clara Moreau",
-      plan: "Starter",
-      amount: 12.0,
-      status: "successful",
-      provider: "Flutterwave",
-      created_at: "2026-05-15T14:30:00Z",
-    },
-    {
-      id: "tx-mock-2",
-      userId: "user-2",
-      userName: "Elias Vance",
-      plan: "Pro",
-      amount: 226.2,
-      status: "successful",
-      provider: "Flutterwave",
-      created_at: "2026-05-20T10:15:00Z",
-    },
-  ]),
+  currentUser: null,
+  profiles: [],
+  posts: [],
+  groups: [],
+  conversations: [],
+  messages: [],
+  notifications: [],
+  ads: [],
+  payments: [],
+  connections: [],
+  tokenTransactions: [],
+  lastDailyReward: null,
   theme: getStoredData("palrene_theme", "dark"),
-  currentView: getStoredData("palrene_current_view", "landing"),
+  currentView: "home",
   activeConversationId: null,
-  selectedPostId: getStoredData("palrene_selected_post_id", null),
+  selectedPostId: null,
   searchQuery: "",
   searchFilter: "all",
   registrationStep: 0,
@@ -237,77 +181,50 @@ export const useStore = create<PalreneState>((set, get) => ({
 
   setTheme: (theme) => {
     set({ theme });
-    setStoredData("palrene_theme", theme);
+    localStorage.setItem("palrene_theme", JSON.stringify(theme));
+    // Apply theme to document
+    const root = document.documentElement;
+    const body = document.body;
+    if (theme === "dark") {
+      root.classList.add("dark");
+      body.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+      body.classList.remove("dark");
+    }
   },
 
-  setView: (currentView) => {
-    set({ currentView });
-    setStoredData("palrene_current_view", currentView);
-  },
+  setView: (currentView) => set({ currentView }),
 
   selectPostId: (id) => {
     set({ selectedPostId: id });
-    setStoredData("palrene_selected_post_id", id);
     if (id) {
+      supabase.rpc("increment_post_views", { post_id: id }).catch(() => {});
       const updatedPosts = get().posts.map((post) => {
-        if (post.id === id) {
-          const authorId = post.userId;
-
-          const updatedProfiles = get().profiles.map((p) => {
-            if (p.id === authorId) {
-              return { ...p, views_count: (p.views_count || 0) + 1 };
-            }
-            return p;
-          });
-          set({ profiles: updatedProfiles });
-          setStoredData("palrene_profiles", updatedProfiles);
-
-          const user = get().currentUser;
-          if (user && post.category) {
-            const currentInterests = user.interests || [];
-            if (!currentInterests.includes(post.category)) {
-              const updatedUser = {
-                ...user,
-                interests: [...currentInterests, post.category],
-              };
-              set({ currentUser: updatedUser });
-              setStoredData("palrene_current_user", updatedUser);
-            }
-          }
-
-          return { ...post, views_count: (post.views_count || 0) + 1 };
-        }
+        if (post.id === id)
+          return { ...post, views_count: (post.views_count ?? 0) + 1 };
         return post;
       });
       set({ posts: updatedPosts, currentView: "post-detail" });
-      setStoredData("palrene_posts", updatedPosts);
-      setStoredData("palrene_current_view", "post-detail");
       window.history.pushState(null, "", `#/post/${id}`);
     } else {
       set({ currentView: "home" });
-      setStoredData("palrene_current_view", "home");
       window.history.pushState(null, "", `#`);
     }
   },
 
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   setSearchFilter: (searchFilter) => set({ searchFilter }),
-  setCurrentUser: (currentUser) => {
-    set({ currentUser });
-    setStoredData("palrene_current_user", currentUser);
-  },
+  setCurrentUser: (currentUser) => set({ currentUser }),
 
-  // Connection helpers
   getConnectionStatus: (profileId) => {
     const user = get().currentUser;
     if (!user) return "none";
-
     const connection = get().connections.find(
       (c) =>
         (c.requester_id === user.id && c.recipient_id === profileId) ||
         (c.requester_id === profileId && c.recipient_id === user.id),
     );
-
     if (!connection) return "none";
     if (connection.status === "accepted") return "connected";
     if (connection.status === "blocked") return "blocked";
@@ -323,7 +240,6 @@ export const useStore = create<PalreneState>((set, get) => ({
   sendConnectionRequest: async (recipientId) => {
     const user = get().currentUser;
     if (!user || user.id === recipientId) return;
-
     const existing = get().connections.find(
       (c) =>
         (c.requester_id === user.id && c.recipient_id === recipientId) ||
@@ -332,7 +248,7 @@ export const useStore = create<PalreneState>((set, get) => ({
     if (existing) return;
 
     const newConn: Connection = {
-      id: `conn_${Date.now()}`,
+      id: crypto.randomUUID(),
       requester_id: user.id,
       recipient_id: recipientId,
       status: "pending",
@@ -340,38 +256,12 @@ export const useStore = create<PalreneState>((set, get) => ({
     };
 
     try {
-      await supabase.from("connections").insert([
-        {
-          id: newConn.id,
-          requester_id: user.id,
-          recipient_id: recipientId,
-          status: "pending",
-        },
-      ]);
-    } catch {}
-
-    const recipient = get().profiles.find((p) => p.id === recipientId);
-    const newNotif: Notification = {
-      id: `notif_conn_${Date.now()}`,
-      type: "connection_request",
-      sender: {
-        id: user.id,
-        full_name: user.full_name,
-        username: user.username,
-        avatar_url: user.avatar_url,
-      },
-      content: `${user.full_name} sent you a connection request.`,
-      created_at: new Date().toISOString(),
-      read: false,
-    };
-
-    const updatedConnections = [...get().connections, newConn];
-    set({
-      connections: updatedConnections,
-      notifications: [newNotif, ...get().notifications],
-    });
-    setStoredData("palrene_connections", updatedConnections);
-    setStoredData("palrene_notifications", get().notifications);
+      await supabase.from("connections").insert([newConn]);
+      const updatedConnections = [...get().connections, newConn];
+      set({ connections: updatedConnections });
+    } catch (e) {
+      console.error("Connection request error:", e);
+    }
   },
 
   acceptConnection: async (connectionId) => {
@@ -383,43 +273,14 @@ export const useStore = create<PalreneState>((set, get) => ({
         .from("connections")
         .update({ status: "accepted" })
         .eq("id", connectionId);
-    } catch {}
-
-    const updatedConnections = get().connections.map((c) => {
-      if (c.id === connectionId) return { ...c, status: "accepted" as const };
-      return c;
-    });
-
-    const conn = get().connections.find((c) => c.id === connectionId);
-    const requester = conn
-      ? get().profiles.find((p) => p.id === conn.requester_id)
-      : null;
-
-    const acceptNotif: Notification = {
-      id: `notif_acc_${Date.now()}`,
-      type: "connection_accepted",
-      sender: requester
-        ? {
-            id: requester.id,
-            full_name: requester.full_name,
-            username: requester.username,
-            avatar_url: requester.avatar_url,
-          }
-        : undefined,
-      content: `${user.full_name} accepted your connection request. You can now message each other!`,
-      created_at: new Date().toISOString(),
-      read: false,
-    };
-
-    // Reward both parties for connecting
-    get().earnTokens(10, "engagement", "Connection accepted — social reward");
-
-    set({
-      connections: updatedConnections,
-      notifications: [acceptNotif, ...get().notifications],
-    });
-    setStoredData("palrene_connections", updatedConnections);
-    setStoredData("palrene_notifications", get().notifications);
+      const updatedConnections = get().connections.map((c) =>
+        c.id === connectionId ? { ...c, status: "accepted" as const } : c,
+      );
+      set({ connections: updatedConnections });
+      get().earnTokens(10, "engagement", "Connection accepted — social reward");
+    } catch (e) {
+      console.error("Accept connection error:", e);
+    }
   },
 
   declineConnection: async (connectionId) => {
@@ -428,14 +289,13 @@ export const useStore = create<PalreneState>((set, get) => ({
         .from("connections")
         .update({ status: "declined" })
         .eq("id", connectionId);
-    } catch {}
-
-    const updatedConnections = get().connections.map((c) => {
-      if (c.id === connectionId) return { ...c, status: "declined" as const };
-      return c;
-    });
-    set({ connections: updatedConnections });
-    setStoredData("palrene_connections", updatedConnections);
+      const updatedConnections = get().connections.map((c) =>
+        c.id === connectionId ? { ...c, status: "declined" as const } : c,
+      );
+      set({ connections: updatedConnections });
+    } catch (e) {
+      console.error("Decline connection error:", e);
+    }
   },
 
   blockUser: async (userId) => {
@@ -454,155 +314,103 @@ export const useStore = create<PalreneState>((set, get) => ({
           .from("connections")
           .update({ status: "blocked" })
           .eq("id", existing.id);
-      } catch {}
-      const updatedConnections = get().connections.map((c) => {
-        if (c.id === existing.id) return { ...c, status: "blocked" as const };
-        return c;
-      });
-      set({ connections: updatedConnections });
-      setStoredData("palrene_connections", updatedConnections);
+        const updatedConnections = get().connections.map((c) =>
+          c.id === existing.id ? { ...c, status: "blocked" as const } : c,
+        );
+        set({ connections: updatedConnections });
+      } catch (e) {
+        console.error("Block user error:", e);
+      }
     } else {
       const newConn: Connection = {
-        id: `conn_block_${Date.now()}`,
+        id: crypto.randomUUID(),
         requester_id: user.id,
         recipient_id: userId,
         status: "blocked",
         created_at: new Date().toISOString(),
       };
       try {
-        await supabase.from("connections").insert([
-          {
-            id: newConn.id,
-            requester_id: user.id,
-            recipient_id: userId,
-            status: "blocked",
-          },
-        ]);
-      } catch {}
-      const updatedConnections = [...get().connections, newConn];
-      set({ connections: updatedConnections });
-      setStoredData("palrene_connections", updatedConnections);
+        await supabase.from("connections").insert([newConn]);
+        const updatedConnections = [...get().connections, newConn];
+        set({ connections: updatedConnections });
+      } catch (e) {
+        console.error("Block user error:", e);
+      }
     }
   },
 
-  // Token Actions
   earnTokens: async (amount, source, description) => {
     const user = get().currentUser;
     if (!user) return;
 
-    const tx: TokenTransaction = {
-      id: `ttx_${Date.now()}`,
-      userId: user.id,
-      amount,
-      type: "earn",
-      source,
-      description,
-      created_at: new Date().toISOString(),
-    };
-
     try {
-      await supabase.from("token_transactions").insert([
-        {
-          // id: tx.id, // Remove this line if it's not a real UUID string! Let database generate it.
-          user_id: user.id,
-          amount,
-          type: "earn",
-          source,
-          description,
-        },
-      ]);
+      const { data, error } = await supabase.rpc("add_user_tokens", {
+        target_user_id: user.id,
+        token_amount: amount,
+        token_source: source,
+        token_description: description,
+      });
+
+      if (error) {
+        console.error("Error earning tokens:", error);
+        return;
+      }
+
+      if (data?.success) {
+        const updatedUser = { ...user, token_balance: data.new_balance };
+        set({ currentUser: updatedUser });
+      }
     } catch (err) {
-      console.error("Insert transaction failed:", err);
+      console.error("Token operation failed:", err);
     }
-
-    const newBalance = (user.token_balance || 0) + amount;
-    const updatedUser = { ...user, token_balance: newBalance };
-    const updatedProfiles = get().profiles.map((p) => {
-      if (p.id === user.id) return { ...p, token_balance: newBalance };
-      return p;
-    });
-
-    const newTxs = [tx, ...get().tokenTransactions];
-    set({
-      currentUser: updatedUser,
-      profiles: updatedProfiles,
-      tokenTransactions: newTxs,
-    });
-    setStoredData("palrene_current_user", updatedUser);
-    setStoredData("palrene_profiles", updatedProfiles);
-    setStoredData("palrene_token_transactions", newTxs);
-
-    // Token earned notification
-    const earnNotif: Notification = {
-      id: `notif_tok_${Date.now()}`,
-      type: "token_earned",
-      content: `+${amount} tokens earned: ${description}`,
-      created_at: new Date().toISOString(),
-      read: false,
-    };
-    set({ notifications: [earnNotif, ...get().notifications] });
-    setStoredData("palrene_notifications", get().notifications);
   },
 
   spendTokens: async (amount, source, description) => {
     const user = get().currentUser;
     if (!user) return false;
 
-    const currentBalance = user.token_balance || 0;
-    if (currentBalance < amount) return false;
-
-    const tx: TokenTransaction = {
-      id: `ttx_${Date.now()}`,
-      userId: user.id,
-      amount,
-      type: "spend",
-      source,
-      description,
-      created_at: new Date().toISOString(),
-    };
-
     try {
-      await supabase.from("token_transactions").insert([
-        {
-          id: tx.id,
-          user_id: user.id,
-          amount,
-          type: "spend",
-          source,
-          description,
-        },
-      ]);
-    } catch {}
+      const { data, error } = await supabase.rpc("spend_user_tokens", {
+        target_user_id: user.id,
+        token_amount: amount,
+        token_source: source,
+        token_description: description,
+      });
 
-    const newBalance = currentBalance - amount;
-    const updatedUser = { ...user, token_balance: newBalance };
-    const updatedProfiles = get().profiles.map((p) => {
-      if (p.id === user.id) return { ...p, token_balance: newBalance };
-      return p;
-    });
+      if (error) {
+        console.error("Error spending tokens:", error);
+        return false;
+      }
 
-    const newTxs = [tx, ...get().tokenTransactions];
-    set({
-      currentUser: updatedUser,
-      profiles: updatedProfiles,
-      tokenTransactions: newTxs,
-    });
-    setStoredData("palrene_current_user", updatedUser);
-    setStoredData("palrene_profiles", updatedProfiles);
-    setStoredData("palrene_token_transactions", newTxs);
-    return true;
+      if (data?.success) {
+        const updatedUser = { ...user, token_balance: data.new_balance };
+        set({ currentUser: updatedUser });
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Token spend failed:", err);
+      return false;
+    }
   },
 
-  claimDailyReward: () => {
-    const today = new Date().toDateString();
-    const lastClaim = get().lastDailyReward;
+  claimDailyReward: async () => {
+    const user = get().currentUser;
+    if (!user) return false;
 
-    if (lastClaim === today) return false;
+    try {
+      const { data, error } = await supabase.rpc("update_daily_streak", {
+        target_user_id: user.id,
+      });
 
-    set({ lastDailyReward: today });
-    setStoredData("palrene_last_daily_reward", today);
-    get().earnTokens(25, "daily_login", "Daily login reward");
-    return true;
+      if (error || !data?.success) return false;
+
+      get().earnTokens(10, "daily_login", "Daily login reward");
+      return true;
+    } catch (err) {
+      console.error("Daily reward failed:", err);
+      return false;
+    }
   },
 
   watchRewardedAd: () => {
@@ -618,16 +426,11 @@ export const useStore = create<PalreneState>((set, get) => ({
         .from("profiles")
         .update({ relationship_status: status })
         .eq("id", user.id);
-    } catch {}
-
-    const updatedUser = { ...user, relationship_status: status };
-    const updatedProfiles = get().profiles.map((p) => {
-      if (p.id === user.id) return { ...p, relationship_status: status };
-      return p;
-    });
-    set({ currentUser: updatedUser, profiles: updatedProfiles });
-    setStoredData("palrene_current_user", updatedUser);
-    setStoredData("palrene_profiles", updatedProfiles);
+      const updatedUser = { ...user, relationship_status: status };
+      set({ currentUser: updatedUser });
+    } catch (e) {
+      console.error("Update relationship status error:", e);
+    }
   },
 
   initializeDynamicData: async () => {
@@ -635,285 +438,25 @@ export const useStore = create<PalreneState>((set, get) => ({
       const { data: sessionData } = await supabase.auth.getSession();
       const sessionUser = sessionData?.session?.user;
 
-      const { data: dbProfiles, error: profileErr } = await supabase
-        .from("profiles")
-        .select("*");
-
-      if (profileErr) throw profileErr;
-
-      const pData: Profile[] = (dbProfiles || []).map((p: any) => ({
-        id: p.id,
-        email: p.email,
-        full_name: p.full_name || "",
-        username: p.username,
-        avatar_url: p.avatar_url,
-        banner_url: p.banner_url,
-        bio: p.bio,
-        location: p.location,
-        dob: p.dob,
-        gender: p.gender,
-        gender_preference: p.gender_preference,
-        race: p.race,
-        preferred_race: p.preferred_race,
-        age_range_min: p.age_range_min,
-        age_range_max: p.age_range_max,
-        recognition_goals: p.recognition_goals || [],
-        interests: p.interests || [],
-        is_verified: p.is_verified,
-        is_admin: p.is_admin,
-        followers_count: p.followers_count || 0,
-        following_count: p.following_count || 0,
-        views_count: p.views_count || 0,
-        is_active: p.is_active,
-        subscription_tier: p.subscription_tier || "Free",
-        verification_video_url: p.verification_video_url,
-        verification_doc_front_url: p.verification_doc_front_url,
-        verification_doc_back_url: p.verification_doc_back_url,
-        relationship_status: p.relationship_status || "Private",
-        token_balance: p.token_balance || 50,
-      }));
-
-      let activeUser: Profile | null = null;
-      if (sessionUser) {
-        activeUser = pData.find((p) => p.id === sessionUser.id) || null;
-      } else {
-        const lsUser = get().currentUser;
-        if (lsUser) {
-          activeUser = pData.find((p) => p.id === lsUser.id) || lsUser;
-        }
+      if (!sessionUser) {
+        console.log("Palrene: No active session, skipping data fetch.");
+        return;
       }
-
-      const { data: dbPosts } = await supabase
-        .from("posts")
-        .select("*")
-        .order("created_at", { ascending: false });
-      const postsData: Post[] = (dbPosts || []).map((post: any) => {
-        const u = pData.find((prof) => prof.id === post.user_id) || {
-          id: "",
-          full_name: "",
-          username: "",
-          avatar_url: "",
-          is_verified: false,
-        };
-        return {
-          id: post.id,
-          userId: post.user_id,
-          profile: {
-            id: u.id,
-            full_name: u.full_name,
-            username: u.username,
-            avatar_url: u.avatar_url,
-            is_verified: u.is_verified,
-          },
-          content: post.content,
-          giphy_url: post.giphy_url,
-          video_url: post.video_url,
-          media_urls: post.media_urls || [],
-          likes_count: post.likes_count || 0,
-          comments_count: post.comments_count || 0,
-          reposts_count: post.reposts_count || 0,
-          views_count: post.views_count || 0,
-          boosted: post.boosted,
-          is_sensitive: post.is_sensitive,
-          quiz: post.quiz,
-          category: post.category || "relationships",
-          created_at: post.created_at,
-        };
-      });
-
-      const { data: dbGroups } = await supabase.from("groups").select("*");
-      const groupsData: Group[] = (dbGroups || []).map((dbGroup: any) => ({
-        id: dbGroup.id,
-        name: dbGroup.name,
-        description: dbGroup.description,
-        category: dbGroup.category,
-        avatar_url: dbGroup.avatar_url,
-        banner_url: dbGroup.banner_url,
-        members_count: dbGroup.members_count || 1,
-        posts_count: dbGroup.posts_count || 0,
-        created_by: dbGroup.created_by,
-        created_at: dbGroup.created_at,
-        is_private: dbGroup.is_private || false,
-      }));
-
-      const { data: dbConversations } = await supabase
-        .from("conversations")
-        .select("*")
-        .order("last_message_at", { ascending: false });
-      const conversationsData: Conversation[] = (dbConversations || []).map(
-        (dbConv: any) => ({
-          id: dbConv.id,
-          participants: (dbConv.participants || []).map((pId: string) => {
-            const p = pData.find((user) => user.id === pId);
-            return {
-              id: p?.id || pId,
-              full_name: p?.full_name || "User",
-              username: p?.username || "user",
-              avatar_url: p?.avatar_url || "",
-              is_active: p?.is_active,
-              is_verified: p?.is_verified,
-            };
-          }),
-          last_message: dbConv.last_message,
-          last_message_at: dbConv.last_message_at,
-          unread_count: dbConv.unread_count || 0,
-        }),
-      );
-
-      const { data: dbMessages } = await supabase
-        .from("messages")
-        .select("*")
-        .order("created_at", { ascending: true });
-      const messagesData: Message[] = (dbMessages || []).map((m: any) => ({
-        id: m.id,
-        conversation_id: m.conversation_id,
-        sender_id: m.sender_id,
-        content: m.content,
-        media_url: m.media_url,
-        giphy_url: m.giphy_url,
-        is_ai: m.is_ai || false,
-        created_at: m.created_at,
-      }));
-
-      const { data: dbNotifications } = await supabase
-        .from("notifications")
-        .select("*")
-        .order("created_at", { ascending: false });
-      const notificationsData: Notification[] = (dbNotifications || []).map(
-        (dbNotif: any) => ({
-          id: dbNotif.id,
-          type: dbNotif.type as any,
-          sender: dbNotif.sender_id
-            ? {
-                id: dbNotif.sender_id,
-                full_name:
-                  pData.find((p) => p.id === dbNotif.sender_id)?.full_name ||
-                  "Someone",
-                username:
-                  pData.find((p) => p.id === dbNotif.sender_id)?.username || "",
-                avatar_url:
-                  pData.find((p) => p.id === dbNotif.sender_id)?.avatar_url ||
-                  "",
-              }
-            : undefined,
-          content: dbNotif.content,
-          read: dbNotif.read || false,
-          created_at: dbNotif.created_at,
-          action_url: dbNotif.action_url,
-        }),
-      );
-
-      const { data: dbAds } = await supabase
-        .from("ads")
-        .select("*")
-        .order("created_at", { ascending: false });
-      const adsData: Ad[] = (dbAds || []).map((ad: any) => ({
-        id: ad.id,
-        title: ad.title,
-        description: ad.description,
-        link_url: ad.link_url,
-        image_url: ad.image_url,
-        status: ad.status,
-        created_by: ad.created_by,
-        created_at: ad.created_at,
-      }));
-
-      const { data: dbPayments } = await supabase
-        .from("payments")
-        .select("*")
-        .order("created_at", { ascending: false });
-      const paymentsData: PaymentTransaction[] = (dbPayments || []).map(
-        (tx: any) => ({
-          id: tx.id,
-          userId: tx.user_id,
-          userName: tx.user_name,
-          plan: tx.plan,
-          amount: Number(tx.amount || 0),
-          status: tx.status,
-          provider: tx.provider,
-          created_at: tx.created_at,
-        }),
-      );
-
-      // Fetch connections
-      let connectionsData: Connection[] = get().connections;
-      if (activeUser && activeUser.id) {
-        // Safe template string for PostgREST
-        const { data: dbConns, error: connError } = await supabase
-          .from("connections")
-          .select("*")
-          .or(
-            `requester_id.eq.${activeUser.id},recipient_id.eq.${activeUser.id}`,
-          );
-
-        if (!connError && dbConns && dbConns.length > 0) {
-          // 3. Fix: Safely map properties without breaking strict TypeScript rules
-          connectionsData = dbConns.map((c: any) => ({
-            id: c.id,
-            requester_id: c.requester_id,
-            recipient_id: c.recipient_id,
-            status: c.status,
-            created_at: c.created_at,
-          }));
-        }
-      }
-
-      // 4. Fix: Safe state assignment with array checking fallbacks
-      set({
-        profiles: pData && pData.length ? pData : get().profiles,
-        currentUser: activeUser || get().currentUser,
-        posts: postsData && postsData.length ? postsData : get().posts,
-        groups: groupsData && groupsData.length ? groupsData : get().groups,
-        conversations:
-          conversationsData && conversationsData.length
-            ? conversationsData
-            : get().conversations,
-        messages:
-          messagesData && messagesData.length ? messagesData : get().messages,
-        notifications:
-          notificationsData && notificationsData.length
-            ? notificationsData
-            : get().notifications,
-        ads: adsData && adsData.length ? adsData : get().ads,
-        payments:
-          paymentsData && paymentsData.length ? paymentsData : get().payments,
-        connections: connectionsData.length
-          ? connectionsData
-          : get().connections,
-      });
-
-      console.log("Palrene: Supabase active data sync completed successfully.");
-    } catch (e) {
-      console.warn(
-        "Palrene: Supabase offline. Using local simulation storage.",
-        e,
-      );
-    }
-  },
-
-  login: async (email, password) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: password || "temp1234%",
-      });
-
-      if (error) throw error;
 
       const { data: dbProfile } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", data?.user?.id)
-        .single();
+        .eq("id", sessionUser.id)
+        .maybeSingle();
 
-      let profile: Profile;
+      let activeUser: Profile | null = null;
       if (dbProfile) {
-        profile = {
+        activeUser = {
           id: dbProfile.id,
-          email: dbProfile.email,
+          email: dbProfile.email || sessionUser.email,
           full_name: dbProfile.full_name || "",
-          username: dbProfile.username,
-          avatar_url: dbProfile.avatar_url,
+          username: dbProfile.username || "",
+          avatar_url: dbProfile.avatar_url || "",
           banner_url: dbProfile.banner_url,
           bio: dbProfile.bio,
           location: dbProfile.location,
@@ -934,145 +477,364 @@ export const useStore = create<PalreneState>((set, get) => ({
           is_active: dbProfile.is_active,
           subscription_tier: dbProfile.subscription_tier || "Free",
           relationship_status: dbProfile.relationship_status || "Private",
-          token_balance: dbProfile.token_balance || 50,
+          token_balance: dbProfile.token_balance || 100,
+        };
+      }
+
+      const { data: dbPosts } = await supabase
+        .from("posts")
+        .select(
+          "*, profiles!posts_user_id_fkey(id, full_name, username, avatar_url, is_verified)",
+        )
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      const postsData: Post[] = (dbPosts || []).map((post: any) => ({
+        id: post.id,
+        userId: post.user_id,
+        profile: post.profiles || {
+          id: post.user_id,
+          full_name: "User",
+          username: "user",
+          avatar_url: "",
+          is_verified: false,
+        },
+        content: post.content,
+        giphy_url: post.giphy_url,
+        video_url: post.video_url,
+        media_urls: post.media_urls || [],
+        likes_count: post.likes_count || 0,
+        comments_count: post.comments_count || 0,
+        reposts_count: post.reposts_count || 0,
+        views_count: post.views_count || 0,
+        boosted: post.boosted,
+        is_sensitive: post.is_sensitive,
+        quiz: post.quiz,
+        category: post.category || "General",
+        created_at: post.created_at,
+      }));
+
+      const { data: dbGroups } = await supabase.from("groups").select("*");
+      const groupsData: Group[] = (dbGroups || []).map((g: any) => ({
+        id: g.id,
+        name: g.name,
+        description: g.description,
+        category: g.category,
+        avatar_url: g.avatar_url,
+        banner_url: g.banner_url,
+        members_count: g.members_count || 1,
+        posts_count: g.posts_count || 0,
+        created_by: g.created_by,
+        created_at: g.created_at,
+        is_private: g.is_private || false,
+      }));
+
+      const { data: dbConversations } = await supabase
+        .from("conversations")
+        .select("*")
+        .contains("participants", [sessionUser.id])
+        .order("last_message_at", { ascending: false });
+
+      const allParticipantIds = (dbConversations || []).flatMap(
+        (c: any) => c.participants || [],
+      );
+      const uniqueParticipantIds = [...new Set(allParticipantIds)].filter(
+        (id) => id !== sessionUser.id,
+      );
+
+      const { data: participantProfiles } =
+        uniqueParticipantIds.length > 0
+          ? await supabase
+              .from("profiles")
+              .select(
+                "id, full_name, username, avatar_url, is_verified, is_active",
+              )
+              .in("id", uniqueParticipantIds)
+          : { data: [] };
+
+      const conversationsData: Conversation[] = (dbConversations || []).map(
+        (c: any) => ({
+          id: c.id,
+          participants: (c.participants || [])
+            .filter((pId: string) => pId !== sessionUser.id)
+            .map((pId: string) => {
+              const p = participantProfiles?.find(
+                (prof: any) => prof.id === pId,
+              );
+              return {
+                id: p?.id || pId,
+                full_name: p?.full_name || "User",
+                username: p?.username || "user",
+                avatar_url: p?.avatar_url || "",
+                is_active: p?.is_active,
+                is_verified: p?.is_verified,
+              };
+            }),
+          last_message: c.last_message,
+          last_message_at: c.last_message_at,
+          unread_count: c.unread_count || 0,
+        }),
+      );
+
+      const conversationIds = (dbConversations || []).map((c: any) => c.id);
+      const { data: dbMessages } =
+        conversationIds.length > 0
+          ? await supabase
+              .from("messages")
+              .select("*")
+              .in("conversation_id", conversationIds)
+              .order("created_at", { ascending: true })
+          : { data: [] };
+
+      const messagesData: Message[] = (dbMessages || []).map((m: any) => ({
+        id: m.id,
+        conversation_id: m.conversation_id,
+        sender_id: m.sender_id,
+        content: m.content,
+        media_url: m.media_url,
+        giphy_url: m.giphy_url,
+        is_ai: m.is_ai || false,
+        created_at: m.created_at,
+      }));
+
+      const { data: dbNotifications } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", sessionUser.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      const senderIds = (dbNotifications || [])
+        .filter((n: any) => n.sender_id)
+        .map((n: any) => n.sender_id);
+      const uniqueSenderIds = [...new Set(senderIds)];
+      const { data: senderProfiles } =
+        uniqueSenderIds.length > 0
+          ? await supabase
+              .from("profiles")
+              .select("id, full_name, username, avatar_url")
+              .in("id", uniqueSenderIds)
+          : { data: [] };
+
+      const notificationsData: Notification[] = (dbNotifications || []).map(
+        (n: any) => ({
+          id: n.id,
+          type: n.type as any,
+          sender: n.sender_id
+            ? {
+                id: n.sender_id,
+                full_name:
+                  senderProfiles?.find((p: any) => p.id === n.sender_id)
+                    ?.full_name || "Someone",
+                username:
+                  senderProfiles?.find((p: any) => p.id === n.sender_id)
+                    ?.username || "",
+                avatar_url:
+                  senderProfiles?.find((p: any) => p.id === n.sender_id)
+                    ?.avatar_url || "",
+              }
+            : undefined,
+          content: n.content,
+          read: n.read || false,
+          created_at: n.created_at,
+          action_url: n.action_url,
+        }),
+      );
+
+      const { data: dbAds } = await supabase
+        .from("ads")
+        .select("*")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false });
+      const adsData: Ad[] = (dbAds || []).map((ad: any) => ({
+        id: ad.id,
+        title: ad.title,
+        description: ad.description,
+        link_url: ad.link_url,
+        image_url: ad.image_url,
+        status: ad.status,
+        created_by: ad.created_by,
+        created_at: ad.created_at,
+      }));
+
+      const { data: dbPayments } = await supabase
+        .from("payments")
+        .select("*")
+        .eq("user_id", sessionUser.id)
+        .order("created_at", { ascending: false });
+      const paymentsData: PaymentTransaction[] = (dbPayments || []).map(
+        (tx: any) => ({
+          id: tx.id,
+          userId: tx.user_id,
+          userName: tx.user_name,
+          plan: tx.plan,
+          amount: Number(tx.amount || 0),
+          status: tx.status,
+          provider: tx.provider,
+          created_at: tx.created_at,
+        }),
+      );
+
+      const { data: dbConns } = await supabase
+        .from("connections")
+        .select("*")
+        .or(
+          `requester_id.eq.${sessionUser.id},recipient_id.eq.${sessionUser.id}`,
+        );
+      const connectionsData: Connection[] = (dbConns || []).map((c: any) => ({
+        id: c.id,
+        requester_id: c.requester_id,
+        recipient_id: c.recipient_id,
+        status: c.status,
+        created_at: c.created_at,
+      }));
+
+      set({
+        currentUser: activeUser,
+        posts: postsData,
+        groups: groupsData,
+        conversations: conversationsData,
+        messages: messagesData,
+        notifications: notificationsData,
+        ads: adsData,
+        payments: paymentsData,
+        connections: connectionsData,
+      });
+
+      console.log("Palrene: Data initialized successfully.");
+    } catch (e) {
+      console.error("Palrene: Error initializing data:", e);
+    }
+  },
+
+  login: async (email, password) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: password || "temp1234%",
+      });
+
+      if (error) throw error;
+
+      const userId = data?.user?.id;
+      if (!userId) return false;
+
+      const { data: dbProfile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+
+      let profile: Profile;
+      if (dbProfile) {
+        profile = {
+          id: dbProfile.id,
+          email: dbProfile.email || email,
+          full_name: dbProfile.full_name || "",
+          username: dbProfile.username || "",
+          avatar_url: dbProfile.avatar_url || "",
+          banner_url: dbProfile.banner_url,
+          bio: dbProfile.bio,
+          location: dbProfile.location,
+          dob: dbProfile.dob,
+          gender: dbProfile.gender,
+          gender_preference: dbProfile.gender_preference,
+          race: dbProfile.race,
+          preferred_race: dbProfile.preferred_race,
+          age_range_min: dbProfile.age_range_min,
+          age_range_max: dbProfile.age_range_max,
+          recognition_goals: dbProfile.recognition_goals || [],
+          interests: dbProfile.interests || [],
+          is_verified: dbProfile.is_verified,
+          is_admin: dbProfile.is_admin,
+          followers_count: dbProfile.followers_count || 0,
+          following_count: dbProfile.following_count || 0,
+          views_count: dbProfile.views_count || 0,
+          is_active: dbProfile.is_active,
+          subscription_tier: dbProfile.subscription_tier || "Free",
+          relationship_status: dbProfile.relationship_status || "Private",
+          token_balance: dbProfile.token_balance || 100,
         };
       } else {
         const username = email
           .split("@")[0]
           .toLowerCase()
           .replace(/[^a-z0-9]/g, "_");
+        const { data: newProfile } = await supabase
+          .from("profiles")
+          .insert([
+            {
+              id: userId,
+              email,
+              full_name: email.split("@")[0].split(".")[0],
+              username,
+              avatar_url: `https://api.dicebear.com/7.x/adventurer/svg?seed=${username}`,
+              banner_url:
+                "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
+              is_admin: email.toLowerCase() === "kamyavince@gmail.com",
+              is_verified: false,
+              subscription_tier: "Free",
+              relationship_status: "Private",
+              token_balance: 100,
+            },
+          ])
+          .select()
+          .single();
+
         profile = {
-          id: data?.user?.id || `user_${Date.now()}`,
+          id: userId,
           email,
-          full_name: email.split("@")[0].split(".")[0],
+          full_name: newProfile?.full_name || email.split("@")[0].split(".")[0],
           username,
-          avatar_url: `https://api.dicebear.com/7.x/adventurer/svg?seed=${username}`,
-          banner_url:
-            "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
+          avatar_url:
+            newProfile?.avatar_url ||
+            `https://api.dicebear.com/7.x/adventurer/svg?seed=${username}`,
+          banner_url: newProfile?.banner_url,
           followers_count: 0,
           following_count: 0,
-          views_count: 1,
+          views_count: 0,
           is_active: true,
           is_verified: false,
           relationship_status: "Private",
-          token_balance: 50,
-          is_admin:
-            get().profiles.filter(
-              (p) => !["poly-ai", "user-1", "user-2", "user-3"].includes(p.id),
-            ).length < 3 ||
-            email.toLowerCase() === "kamyavince@gmail.com" ||
-            email.toLowerCase().includes("admin"),
+          token_balance: 100,
+          is_admin: email.toLowerCase() === "kamyavince@gmail.com",
         };
-        await supabase.from("profiles").insert([
-          {
-            id: profile.id,
-            email: profile.email,
-            full_name: profile.full_name,
-            username: profile.username,
-            avatar_url: profile.avatar_url,
-            banner_url: profile.banner_url,
-            is_admin: profile.is_admin,
-            is_verified: false,
-            subscription_tier: "Free",
-            relationship_status: "Private",
-            token_balance: 50,
-          },
-        ]);
       }
 
       set({ currentUser: profile, currentView: "home" });
-      setStoredData("palrene_current_user", profile);
-
-      get().triggerEmailAlert(
-        "Welcome Back to Palrene",
-        `Hello ${profile.full_name}, we are delighted to welcome you back to your emotional support and relationship harbor without boundaries.`,
-      );
-
       get().initializeDynamicData();
       return true;
     } catch (e) {
-      console.warn("Supabase Auth error. Proceeding with local session.", e);
-      const existingProfiles = get().profiles;
-      let profile = existingProfiles.find(
-        (p) => p.email.toLowerCase() === email.toLowerCase(),
-      );
-      if (!profile) {
-        const username = email
-          .split("@")[0]
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, "_");
-        profile = {
-          id: `user_${Date.now()}`,
-          email,
-          full_name: email.split("@")[0].split(".")[0],
-          username,
-          avatar_url: `https://api.dicebear.com/7.x/adventurer/svg?seed=${username}`,
-          banner_url:
-            "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
-          followers_count: 0,
-          following_count: 0,
-          views_count: 1,
-          is_active: true,
-          is_verified: false,
-          relationship_status: "Private",
-          token_balance: 50,
-          is_admin:
-            existingProfiles.filter(
-              (p) => !["poly-ai", "user-1", "user-2", "user-3"].includes(p.id),
-            ).length < 3 ||
-            email.toLowerCase() === "kamyavince@gmail.com" ||
-            email.toLowerCase().includes("admin"),
-        };
-        const updatedProfiles = [...existingProfiles, profile];
-        set({ profiles: updatedProfiles });
-        setStoredData("palrene_profiles", updatedProfiles);
-      }
-      set({ currentUser: profile, currentView: "home" });
-      setStoredData("palrene_current_user", profile);
-      return true;
+      console.error("Login error:", e);
+      return false;
     }
   },
 
   signup: async (email, password) => {
     try {
-      await supabase.auth.signUp({ email, password: password || "temp1234%" });
-      set({
-        registrationStep: 1,
-        registrationData: { email },
-        currentView: "landing",
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: password || "temp1234%",
       });
+      if (error) throw error;
+      set({ registrationStep: 1, registrationData: { email } });
       return true;
     } catch (e) {
-      console.warn("Supabase signup error, using local onboarding", e);
-      set({
-        registrationStep: 1,
-        registrationData: { email },
-        currentView: "landing",
-      });
-      return true;
+      console.error("Signup error:", e);
+      return false;
     }
   },
 
   resetPassword: async (email) => {
     try {
       await supabase.auth.resetPasswordForEmail(email);
-      get().triggerEmailAlert(
-        "Palrene - Password Reset Requested",
-        "We received a request to reset your password. Please complete it inside your client window.",
-      );
       return true;
     } catch {
-      get().triggerEmailAlert(
-        "Palrene - Password Reset Requested",
-        "We received a request to reset your password. Please complete it inside your client window.",
-      );
       return true;
     }
   },
 
-  startRegistration: () => {
-    set({ registrationStep: 1, registrationData: {} });
-  },
+  startRegistration: () => set({ registrationStep: 1, registrationData: {} }),
 
   nextRegistrationStep: (data) => {
     const updatedData = { ...get().registrationData, ...data };
@@ -1092,13 +854,13 @@ export const useStore = create<PalreneState>((set, get) => ({
 
   finishRegistration: async () => {
     const finalData = get().registrationData;
-    const existingProfiles = get().profiles;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const authId = sessionData?.session?.user?.id;
 
-    let authId = `user_${Date.now()}`;
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData?.session?.user?.id) authId = sessionData.session.user.id;
-    } catch {}
+    if (!authId) {
+      console.error("No auth session found for registration");
+      return;
+    }
 
     const newProfile: Profile = {
       id: authId,
@@ -1107,7 +869,7 @@ export const useStore = create<PalreneState>((set, get) => ({
       username: finalData.username || `human_${Date.now()}`,
       avatar_url:
         finalData.avatar_url ||
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        `https://api.dicebear.com/7.x/adventurer/svg?seed=${authId}`,
       banner_url:
         finalData.banner_url ||
         "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
@@ -1123,16 +885,10 @@ export const useStore = create<PalreneState>((set, get) => ({
       recognition_goals: finalData.recognition_goals || ["friendship"],
       interests: finalData.interests || ["relationships", "music", "science"],
       is_verified: false,
-      is_admin:
-        existingProfiles.filter(
-          (p) => !["poly-ai", "user-1", "user-2", "user-3"].includes(p.id),
-        ).length < 3 ||
-        (finalData.email &&
-          (finalData.email.toLowerCase() === "kamyavince@gmail.com" ||
-            finalData.email.toLowerCase().includes("admin"))),
+      is_admin: finalData.email?.toLowerCase() === "kamyavince@gmail.com",
       followers_count: 0,
       following_count: 0,
-      views_count: 1,
+      views_count: 0,
       is_active: true,
       relationship_status: "Single",
       token_balance: 100,
@@ -1166,51 +922,56 @@ export const useStore = create<PalreneState>((set, get) => ({
           token_balance: 100,
         },
       ]);
+
+      await supabase
+        .from("onboarding_profiles")
+        .update({ profile_completed: true })
+        .eq("id", authId);
+      await supabase.from("user_tokens").upsert([
+        {
+          user_id: authId,
+          balance: 200,
+          lifetime_earned: 200,
+          current_streak: 1,
+          longest_streak: 1,
+        },
+      ]);
+
+      await supabase.from("token_transactions").insert([
+        {
+          user_id: authId,
+          amount: 100,
+          type: "earn",
+          source: "welcome_bonus",
+          description: "Welcome to Palrene — enjoy 100 bonus tokens!",
+        },
+      ]);
     } catch (e) {
-      console.warn("Supabase profiles insert error, persisting locally.", e);
+      console.error("Error finishing registration:", e);
     }
 
-    const updatedProfiles = [...existingProfiles, newProfile];
-    set({
-      profiles: updatedProfiles,
-      currentUser: newProfile,
-      registrationStep: 0,
-      registrationData: {},
-      currentView: "home",
-    });
-
-    setStoredData("palrene_profiles", updatedProfiles);
-    setStoredData("palrene_current_user", newProfile);
-
-    // Welcome bonus tokens
-    setTimeout(
-      () =>
-        get().earnTokens(
-          100,
-          "welcome_bonus",
-          "Welcome to Palrene — enjoy 100 bonus tokens!",
-        ),
-      500,
-    );
-
-    get().triggerEmailAlert(
-      "Palrene Registration Successful",
-      `Welcome to Palrene, ${newProfile.full_name}! Your profile is fully ready. Poly is waiting to help connect you with incredible people.`,
-    );
-
+    set({ currentUser: newProfile, registrationStep: 0, registrationData: {} });
     get().initializeDynamicData();
   },
 
   logout: async () => {
     try {
       await supabase.auth.signOut();
-    } catch {}
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
     set({
       currentUser: null,
-      currentView: "landing",
+      currentView: "home",
       activeConversationId: null,
+      posts: [],
+      conversations: [],
+      messages: [],
+      notifications: [],
+      connections: [],
+      payments: [],
+      tokenTransactions: [],
     });
-    localStorage.removeItem("palrene_current_user");
   },
 
   createPost: async (
@@ -1225,7 +986,7 @@ export const useStore = create<PalreneState>((set, get) => ({
     if (!user) return;
 
     const newPost: Post = {
-      id: `post_${Date.now()}`,
+      id: crypto.randomUUID(),
       userId: user.id,
       profile: {
         full_name: user.full_name,
@@ -1266,18 +1027,14 @@ export const useStore = create<PalreneState>((set, get) => ({
           reposts_count: 0,
           is_sensitive: newPost.is_sensitive,
           quiz: newPost.quiz,
-          category: "relationships",
+          category: "General",
         },
       ]);
     } catch (e) {
-      console.warn("Supabase posts insert error", e);
+      console.error("Create post error:", e);
     }
 
-    const updatedPosts = [newPost, ...get().posts];
-    set({ posts: updatedPosts });
-    setStoredData("palrene_posts", updatedPosts);
-
-    // Earn tokens for posting
+    set({ posts: [newPost, ...get().posts] });
     get().earnTokens(5, "engagement", "Posted new content");
   },
 
@@ -1289,56 +1046,17 @@ export const useStore = create<PalreneState>((set, get) => ({
       await supabase
         .from("likes")
         .insert([{ user_id: user.id, post_id: postId }]);
-      const p = get().posts.find((pst) => pst.id === postId);
-      if (p)
-        await supabase
-          .from("posts")
-          .update({ likes_count: (p.likes_count || 0) + 1 })
-          .eq("id", postId);
+      await supabase.rpc("increment_post_likes", { post_id: postId });
     } catch (e) {
-      console.warn("Supabase like insert error", e);
+      console.error("Like post error:", e);
     }
 
-    const updatedPosts = get().posts.map((post) => {
-      if (post.id === postId) {
-        if (post.userId !== user.id) {
-          const newNotif: Notification = {
-            id: `notif_${Date.now()}`,
-            type: "like",
-            sender: {
-              id: user.id,
-              full_name: user.full_name,
-              username: user.username,
-              avatar_url: user.avatar_url,
-            },
-            content: "liked your post with emotional connection.",
-            created_at: new Date().toISOString(),
-            read: false,
-          };
-          set({ notifications: [newNotif, ...get().notifications] });
-          setStoredData("palrene_notifications", get().notifications);
-          try {
-            supabase.from("notifications").insert([
-              {
-                id: newNotif.id,
-                user_id: post.userId,
-                type: "like",
-                sender_id: user.id,
-                content: newNotif.content,
-              },
-            ]);
-          } catch {}
-          get().triggerEmailAlert(
-            "New Like on Palrene",
-            `${user.full_name} liked your post: "${post.content.slice(0, 30)}..."`,
-          );
-        }
-        return { ...post, likes_count: post.likes_count + 1 };
-      }
-      return post;
-    });
+    const updatedPosts = get().posts.map((post) =>
+      post.id === postId
+        ? { ...post, likes_count: post.likes_count + 1 }
+        : post,
+    );
     set({ posts: updatedPosts });
-    setStoredData("palrene_posts", updatedPosts);
   },
 
   repostPost: async (postId) => {
@@ -1349,91 +1067,52 @@ export const useStore = create<PalreneState>((set, get) => ({
       await supabase
         .from("reposts")
         .insert([{ user_id: user.id, post_id: postId }]);
-      const p = get().posts.find((pst) => pst.id === postId);
-      if (p)
-        await supabase
-          .from("posts")
-          .update({ reposts_count: (p.reposts_count || 0) + 1 })
-          .eq("id", postId);
     } catch (e) {
-      console.warn("Supabase repost insert error", e);
+      console.error("Repost error:", e);
     }
 
-    const updatedPosts = get().posts.map((post) => {
-      if (post.id === postId) {
-        if (post.userId !== user.id) {
-          const newNotif: Notification = {
-            id: `notif_${Date.now()}`,
-            type: "comment",
-            sender: {
-              id: user.id,
-              full_name: user.full_name,
-              username: user.username,
-              avatar_url: user.avatar_url,
-            },
-            content: "reposted your story to their timeline.",
-            created_at: new Date().toISOString(),
-            read: false,
-          };
-          set({ notifications: [newNotif, ...get().notifications] });
-          setStoredData("palrene_notifications", get().notifications);
-          try {
-            supabase.from("notifications").insert([
-              {
-                id: newNotif.id,
-                user_id: post.userId,
-                type: "comment",
-                sender_id: user.id,
-                content: newNotif.content,
-              },
-            ]);
-          } catch {}
-        }
-        return { ...post, reposts_count: post.reposts_count + 1 };
-      }
-      return post;
-    });
+    const updatedPosts = get().posts.map((post) =>
+      post.id === postId
+        ? { ...post, reposts_count: post.reposts_count + 1 }
+        : post,
+    );
     set({ posts: updatedPosts });
-    setStoredData("palrene_posts", updatedPosts);
   },
 
-  boostPost: (postId) => {
+  boostPost: async (postId) => {
     const user = get().currentUser;
     if (!user) return;
+
     try {
-      supabase.from("posts").update({ boosted: true }).eq("id", postId);
-    } catch {}
-    const updatedPosts = get().posts.map((post) => {
-      if (post.id === postId)
-        return { ...post, boosted: true, likes_count: post.likes_count + 15 };
-      return post;
-    });
+      await supabase.from("posts").update({ boosted: true }).eq("id", postId);
+    } catch (e) {
+      console.error("Boost post error:", e);
+    }
+
+    const updatedPosts = get().posts.map((post) =>
+      post.id === postId
+        ? { ...post, boosted: true, likes_count: post.likes_count + 15 }
+        : post,
+    );
     set({ posts: updatedPosts });
-    setStoredData("palrene_posts", updatedPosts);
   },
 
-  voteInQuiz: (postId, optionIndex) => {
+  voteInQuiz: async (postId, optionIndex) => {
     const updatedPosts = get().posts.map((post) => {
       if (post.id === postId && post.quiz) {
-        const quiz = post.quiz;
-        let currentVotes = Array.isArray(quiz.votes) ? [...quiz.votes] : [];
-        if (currentVotes.length !== quiz.options.length)
-          currentVotes = new Array(quiz.options.length).fill(0);
-        currentVotes[optionIndex] = (currentVotes[optionIndex] || 0) + 1;
-        const updatedQuiz = {
-          ...quiz,
-          votes: currentVotes,
-          voted_index: optionIndex,
-        };
+        const votes = [...(post.quiz.votes || [])];
+        votes[optionIndex] = (votes[optionIndex] || 0) + 1;
+        const updatedQuiz = { ...post.quiz, votes, voted_index: optionIndex };
         try {
           supabase.from("posts").update({ quiz: updatedQuiz }).eq("id", postId);
-        } catch {}
+        } catch (e) {
+          console.error("Vote quiz error:", e);
+        }
         return { ...post, quiz: updatedQuiz };
       }
       return post;
     });
     set({ posts: updatedPosts });
-    setStoredData("palrene_posts", updatedPosts);
   },
 
   addComment: async (postId, content) => {
@@ -1444,56 +1123,16 @@ export const useStore = create<PalreneState>((set, get) => ({
       await supabase
         .from("comments")
         .insert([{ post_id: postId, user_id: user.id, content }]);
-      const p = get().posts.find((pst) => pst.id === postId);
-      if (p)
-        await supabase
-          .from("posts")
-          .update({ comments_count: (p.comments_count || 0) + 1 })
-          .eq("id", postId);
     } catch (e) {
-      console.warn("Supabase comment insert error", e);
+      console.error("Add comment error:", e);
     }
 
-    const updatedPosts = get().posts.map((post) => {
-      if (post.id === postId) {
-        if (post.userId !== user.id) {
-          const newNotif: Notification = {
-            id: `notif_${Date.now()}`,
-            type: "comment",
-            sender: {
-              id: user.id,
-              full_name: user.full_name,
-              username: user.username,
-              avatar_url: user.avatar_url,
-            },
-            content: `commented: "${content.slice(0, 40)}"`,
-            created_at: new Date().toISOString(),
-            read: false,
-          };
-          set({ notifications: [newNotif, ...get().notifications] });
-          setStoredData("palrene_notifications", get().notifications);
-          try {
-            supabase.from("notifications").insert([
-              {
-                id: newNotif.id,
-                user_id: post.userId,
-                type: "comment",
-                sender_id: user.id,
-                content: newNotif.content,
-              },
-            ]);
-          } catch {}
-          get().triggerEmailAlert(
-            "New Comment on Palrene",
-            `${user.full_name} commented on your post: "${content}"`,
-          );
-        }
-        return { ...post, comments_count: post.comments_count + 1 };
-      }
-      return post;
-    });
+    const updatedPosts = get().posts.map((post) =>
+      post.id === postId
+        ? { ...post, comments_count: post.comments_count + 1 }
+        : post,
+    );
     set({ posts: updatedPosts });
-    setStoredData("palrene_posts", updatedPosts);
   },
 
   toggleFollow: async (profileId) => {
@@ -1504,83 +1143,15 @@ export const useStore = create<PalreneState>((set, get) => ({
       await supabase
         .from("follows")
         .insert([{ follower_id: user.id, following_id: profileId }]);
-      const u = get().profiles.find((prof) => prof.id === user.id);
-      const t = get().profiles.find((prof) => prof.id === profileId);
-      if (u)
-        await supabase
-          .from("profiles")
-          .update({ following_count: (u.following_count || 0) + 1 })
-          .eq("id", user.id);
-      if (t)
-        await supabase
-          .from("profiles")
-          .update({ followers_count: (t.followers_count || 0) + 1 })
-          .eq("id", profileId);
     } catch (e) {
-      console.warn("Supabase follow insert error", e);
+      console.error("Follow error:", e);
     }
-
-    const updatedProfiles = get().profiles.map((p) => {
-      if (p.id === profileId)
-        return { ...p, followers_count: (p.followers_count || 0) + 1 };
-      return p;
-    });
-    const updatedUser = {
-      ...user,
-      following_count: (user.following_count || 0) + 1,
-    };
-
-    const newNotif: Notification = {
-      id: `notif_${Date.now()}`,
-      type: "follow",
-      sender: {
-        id: user.id,
-        full_name: user.full_name,
-        username: user.username,
-        avatar_url: user.avatar_url,
-      },
-      content: "started following your journey without boundaries.",
-      created_at: new Date().toISOString(),
-      read: false,
-    };
-
-    try {
-      await supabase.from("notifications").insert([
-        {
-          id: newNotif.id,
-          user_id: profileId,
-          type: "follow",
-          sender_id: user.id,
-          content: newNotif.content,
-        },
-      ]);
-    } catch {}
-
-    set({
-      profiles: updatedProfiles,
-      currentUser: updatedUser,
-      notifications: [newNotif, ...get().notifications],
-    });
-    setStoredData("palrene_profiles", updatedProfiles);
-    setStoredData("palrene_current_user", updatedUser);
-    setStoredData("palrene_notifications", get().notifications);
-    get().triggerEmailAlert(
-      "You have a new Follower!",
-      `${user.full_name} (@${user.username}) is now following you on Palrene.`,
-    );
   },
 
   viewProfileCount: (profileId) => {
-    try {
-      supabase.rpc("increment_profile_views", { profile_id: profileId });
-    } catch {}
-    const updatedProfiles = get().profiles.map((p) => {
-      if (p.id === profileId)
-        return { ...p, views_count: (p.views_count || 0) + 1 };
-      return p;
-    });
-    set({ profiles: updatedProfiles });
-    setStoredData("palrene_profiles", updatedProfiles);
+    supabase
+      .rpc("increment_profile_views", { profile_id: profileId })
+      .catch(() => {});
   },
 
   updateProfileSettings: async (data) => {
@@ -1588,48 +1159,19 @@ export const useStore = create<PalreneState>((set, get) => ({
     if (!user) return;
 
     try {
-      await supabase
-        .from("profiles")
-        .update({
-          full_name: data.full_name,
-          username: data.username,
-          avatar_url: data.avatar_url,
-          banner_url: data.banner_url,
-          bio: data.bio,
-          location: data.location,
-          dob: data.dob,
-          gender: data.gender,
-          gender_preference: data.gender_preference,
-          race: data.race,
-          preferred_race: data.preferred_race,
-          age_range_min: data.age_range_min,
-          age_range_max: data.age_range_max,
-          recognition_goals: data.recognition_goals,
-          interests: data.interests,
-          relationship_status: data.relationship_status,
-        })
-        .eq("id", user.id);
+      await supabase.from("profiles").update(data).eq("id", user.id);
+      const updatedUser = { ...user, ...data };
+      set({ currentUser: updatedUser });
     } catch (e) {
-      console.warn("Supabase profiles update error", e);
+      console.error("Update profile error:", e);
     }
-
-    const updatedUser = { ...user, ...data };
-    const updatedProfiles = get().profiles.map((p) => {
-      if (p.id === user.id) return { ...p, ...data };
-      return p;
-    });
-    set({ currentUser: updatedUser, profiles: updatedProfiles });
-    setStoredData("palrene_current_user", updatedUser);
-    setStoredData("palrene_profiles", updatedProfiles);
   },
 
   startConversation: async (profileId) => {
-    const conversations = get().conversations;
-    const profiles = get().profiles;
     const user = get().currentUser;
     if (!user) return "";
 
-    const existing = conversations.find((c) =>
+    const existing = get().conversations.find((c) =>
       c.participants.some((p) => p.id === profileId),
     );
     if (existing) {
@@ -1637,10 +1179,10 @@ export const useStore = create<PalreneState>((set, get) => ({
       return existing.id;
     }
 
-    const recipient = profiles.find((p) => p.id === profileId);
+    const recipient = get().profiles.find((p) => p.id === profileId);
     if (!recipient) return "";
 
-    const newConvId = `conv_${Date.now()}`;
+    const newConvId = crypto.randomUUID();
     const newConv: Conversation = {
       id: newConvId,
       participants: [
@@ -1668,15 +1210,14 @@ export const useStore = create<PalreneState>((set, get) => ({
         },
       ]);
     } catch (e) {
-      console.warn("Supabase conversation insert error", e);
+      console.error("Start conversation error:", e);
     }
 
     set({
-      conversations: [newConv, ...conversations],
+      conversations: [newConv, ...get().conversations],
       activeConversationId: newConvId,
       currentView: "messages",
     });
-    setStoredData("palrene_conversations", [newConv, ...conversations]);
     return newConvId;
   },
 
@@ -1685,7 +1226,7 @@ export const useStore = create<PalreneState>((set, get) => ({
     if (!user) return;
 
     const newMsg: Message = {
-      id: `msg_${Date.now()}`,
+      id: crypto.randomUUID(),
       conversation_id: conversationId,
       sender_id: user.id,
       content,
@@ -1714,28 +1255,23 @@ export const useStore = create<PalreneState>((set, get) => ({
         })
         .eq("id", conversationId);
     } catch (e) {
-      console.warn("Supabase message insert error", e);
+      console.error("Send message error:", e);
     }
 
     const updatedMessages = [...get().messages, newMsg];
-    const updatedConversations = get().conversations.map((conv) => {
-      if (conv.id === conversationId)
-        return {
-          ...conv,
-          last_message: content || "Shared attachment",
-          last_message_at: new Date().toISOString(),
-        };
-      return conv;
-    });
+    const updatedConversations = get().conversations.map((conv) =>
+      conv.id === conversationId
+        ? {
+            ...conv,
+            last_message: content || "Shared attachment",
+            last_message_at: new Date().toISOString(),
+          }
+        : conv,
+    );
     set({ messages: updatedMessages, conversations: updatedConversations });
-    setStoredData("palrene_messages", updatedMessages);
-    setStoredData("palrene_conversations", updatedConversations);
 
     const activeConv = get().conversations.find((c) => c.id === conversationId);
-    if (!activeConv) return;
-    const recipient = activeConv.participants[0];
-
-    if (recipient && recipient.id === "poly-ai") {
+    if (activeConv?.participants[0]?.id === "poly-ai") {
       try {
         const relevantHistory = get()
           .messages.filter((m) => m.conversation_id === conversationId)
@@ -1754,13 +1290,14 @@ export const useStore = create<PalreneState>((set, get) => ({
 
         if (data.reply) {
           const aiMsg: Message = {
-            id: `msg_ai_${Date.now()}`,
+            id: crypto.randomUUID(),
             conversation_id: conversationId,
             sender_id: "poly-ai",
             content: data.reply,
             created_at: new Date().toISOString(),
             is_ai: true,
           };
+
           try {
             await supabase.from("messages").insert([
               {
@@ -1771,44 +1308,15 @@ export const useStore = create<PalreneState>((set, get) => ({
                 is_ai: true,
               },
             ]);
-          } catch {}
-          const doubleUpdatedMessages = [...get().messages, aiMsg];
-          const doubleUpdatedConversations = get().conversations.map((c) => {
-            if (c.id === conversationId)
-              return {
-                ...c,
-                last_message: data.reply,
-                last_message_at: new Date().toISOString(),
-              };
-            return c;
-          });
-          set({
-            messages: doubleUpdatedMessages,
-            conversations: doubleUpdatedConversations,
-          });
-          setStoredData("palrene_messages", doubleUpdatedMessages);
-          setStoredData("palrene_conversations", doubleUpdatedConversations);
+          } catch (e) {
+            console.error("AI message insert error:", e);
+          }
+
+          set({ messages: [...get().messages, aiMsg] });
         }
       } catch (err) {
-        console.error("Poly AI error", err);
-        const fallbackMsg: Message = {
-          id: `msg_ai_${Date.now()}`,
-          conversation_id: conversationId,
-          sender_id: "poly-ai",
-          content:
-            "I feel your frequency deeply, but my core socket experienced a miniature solar flare. Let's breathe, and tell me more about what is on your heart.",
-          created_at: new Date().toISOString(),
-          is_ai: true,
-        };
-        const doubleUpdatedMessages = [...get().messages, fallbackMsg];
-        set({ messages: doubleUpdatedMessages });
-        setStoredData("palrene_messages", doubleUpdatedMessages);
+        console.error("Poly AI error:", err);
       }
-    } else {
-      get().triggerEmailAlert(
-        "New Private Message on Palrene",
-        `You've received a secure message from ${user.full_name}: "${content.slice(0, 50)}..."`,
-      );
     }
   },
 
@@ -1817,30 +1325,26 @@ export const useStore = create<PalreneState>((set, get) => ({
 
   joinGroup: async (groupId) => {
     try {
-      const g = get().groups.find((group) => group.id === groupId);
-      if (g)
-        await supabase
-          .from("groups")
-          .update({ members_count: (g.members_count || 1) + 1 })
-          .eq("id", groupId);
+      await supabase.rpc("increment_group_members", { group_id: groupId });
     } catch (e) {
-      console.warn("Supabase joinGroup error", e);
+      console.error("Join group error:", e);
     }
-    const updatedGroups = get().groups.map((group) => {
-      if (group.id === groupId)
-        return { ...group, members_count: group.members_count + 1 };
-      return group;
-    });
+
+    const updatedGroups = get().groups.map((group) =>
+      group.id === groupId
+        ? { ...group, members_count: group.members_count + 1 }
+        : group,
+    );
     set({ groups: updatedGroups });
-    setStoredData("palrene_groups", updatedGroups);
     get().earnTokens(5, "engagement", "Joined a community group");
   },
 
   createGroup: async (name, description, category, avatarUrl, isPrivate) => {
     const user = get().currentUser;
     if (!user) return;
+
     const newGroup: Group = {
-      id: `group_${Date.now()}`,
+      id: crypto.randomUUID(),
       name,
       description,
       category,
@@ -1855,100 +1359,41 @@ export const useStore = create<PalreneState>((set, get) => ({
       created_at: new Date().toISOString(),
       is_private: isPrivate,
     };
+
     try {
-      await supabase.from("groups").insert([
-        {
-          id: newGroup.id,
-          name,
-          description,
-          category,
-          avatar_url: newGroup.avatar_url,
-          banner_url: newGroup.banner_url,
-          members_count: 1,
-          posts_count: 0,
-          created_by: user.id,
-          is_private: isPrivate,
-        },
-      ]);
+      await supabase.from("groups").insert([newGroup]);
     } catch (e) {
-      console.warn("Supabase group insert error", e);
+      console.error("Create group error:", e);
     }
-    const updatedGroups = [...get().groups, newGroup];
-    set({ groups: updatedGroups });
-    setStoredData("palrene_groups", updatedGroups);
+
+    set({ groups: [...get().groups, newGroup] });
   },
 
   submitVerification: async (videoUrl, docFront, docBack) => {
     const user = get().currentUser;
     if (!user) return;
-    const updatedUser = {
-      ...user,
-      bio: `${user.bio || ""} (Verification Pending)`,
-      verification_video_url: videoUrl,
-      verification_doc_front_url: docFront,
-      verification_doc_back_url: docBack,
-    };
+
     try {
       await supabase
         .from("profiles")
         .update({
-          bio: updatedUser.bio,
+          bio: `${user.bio || ""} (Verification Pending)`,
           verification_video_url: videoUrl,
           verification_doc_front_url: docFront,
           verification_doc_back_url: docBack,
         })
         .eq("id", user.id);
     } catch (e) {
-      console.warn("Supabase verif submit error", e);
+      console.error("Submit verification error:", e);
     }
-    const updatedProfiles = get().profiles.map((p) => {
-      if (p.id === user.id)
-        return {
-          ...p,
-          bio: `${p.bio || ""} (Verification Pending)`,
-          verification_video_url: videoUrl,
-          verification_doc_front_url: docFront,
-          verification_doc_back_url: docBack,
-        };
-      return p;
-    });
-    const verifyNotif: Notification = {
-      id: `verify_${Date.now()}`,
-      type: "verification",
-      content:
-        "Your verification video and documentation has been received. Admin is manually reviewing.",
-      created_at: new Date().toISOString(),
-      read: false,
-    };
-    try {
-      await supabase.from("notifications").insert([
-        {
-          id: verifyNotif.id,
-          user_id: user.id,
-          type: "verification",
-          content: verifyNotif.content,
-        },
-      ]);
-    } catch {}
-    set({
-      currentUser: updatedUser,
-      profiles: updatedProfiles,
-      notifications: [verifyNotif, ...get().notifications],
-    });
-    setStoredData("palrene_current_user", updatedUser);
-    setStoredData("palrene_profiles", updatedProfiles);
-    setStoredData("palrene_notifications", get().notifications);
-    get().triggerEmailAlert(
-      "Palrene Verification Request Received",
-      "We have safely received your verification logs.",
-    );
   },
 
   submitAd: async (title, description, linkUrl, imageUrl) => {
     const user = get().currentUser;
     if (!user) return;
+
     const newAd: Ad = {
-      id: `ad_${Date.now()}`,
+      id: crypto.randomUUID(),
       title,
       description,
       link_url: linkUrl,
@@ -1959,147 +1404,85 @@ export const useStore = create<PalreneState>((set, get) => ({
       created_by: user.id,
       created_at: new Date().toISOString(),
     };
+
     try {
-      await supabase.from("ads").insert([
-        {
-          id: newAd.id,
-          title,
-          description,
-          link_url: linkUrl,
-          image_url: newAd.image_url,
-          status: "pending",
-          created_by: user.id,
-        },
-      ]);
+      await supabase.from("ads").insert([newAd]);
     } catch (e) {
-      console.warn("Supabase ad insert error", e);
+      console.error("Submit ad error:", e);
     }
-    const updatedAds = [newAd, ...get().ads];
-    set({ ads: updatedAds });
-    setStoredData("palrene_ads", updatedAds);
-    get().triggerEmailAlert(
-      "Ad Submitted for Review",
-      `Your ad campaign "${title}" is pending.`,
-    );
+
+    set({ ads: [...get().ads, newAd] });
   },
 
   approveAd: async (adId) => {
     try {
       await supabase.from("ads").update({ status: "approved" }).eq("id", adId);
     } catch (e) {
-      console.warn("Supabase ad approve error", e);
+      console.error("Approve ad error:", e);
     }
-    const updatedAds = get().ads.map((ad) => {
-      if (ad.id === adId) {
-        get().triggerEmailAlert(
-          "Ad Approved!",
-          `Your ad campaign "${ad.title}" has been approved.`,
-        );
-        return { ...ad, status: "approved" as const };
-      }
-      return ad;
-    });
+
+    const updatedAds = get().ads.map((ad) =>
+      ad.id === adId ? { ...ad, status: "approved" as const } : ad,
+    );
     set({ ads: updatedAds });
-    setStoredData("palrene_ads", updatedAds);
   },
 
   rejectAd: async (adId) => {
     try {
       await supabase.from("ads").update({ status: "rejected" }).eq("id", adId);
     } catch (e) {
-      console.warn("Supabase ad reject error", e);
+      console.error("Reject ad error:", e);
     }
-    const updatedAds = get().ads.map((ad) => {
-      if (ad.id === adId) {
-        get().triggerEmailAlert(
-          "Ad Rejected",
-          `Your ad "${ad.title}" did not match policies.`,
-        );
-        return { ...ad, status: "rejected" as const };
-      }
-      return ad;
-    });
+
+    const updatedAds = get().ads.map((ad) =>
+      ad.id === adId ? { ...ad, status: "rejected" as const } : ad,
+    );
     set({ ads: updatedAds });
-    setStoredData("palrene_ads", updatedAds);
   },
 
   approveVerification: async (profileId) => {
     try {
-      const targetUser = get().profiles.find((p) => p.id === profileId);
-      const cleanedBio =
-        targetUser?.bio?.replace(" (Verification Pending)", "") || "";
       await supabase
         .from("profiles")
-        .update({ is_verified: true, bio: cleanedBio })
+        .update({ is_verified: true })
         .eq("id", profileId);
     } catch (e) {
-      console.warn("Supabase approve verification error", e);
+      console.error("Approve verification error:", e);
     }
-    const updatedProfiles = get().profiles.map((p) => {
-      if (p.id === profileId)
-        return {
-          ...p,
-          is_verified: true,
-          bio: p.bio?.replace(" (Verification Pending)", ""),
-        };
-      return p;
-    });
-    set({ profiles: updatedProfiles });
-    setStoredData("palrene_profiles", updatedProfiles);
-    const match = updatedProfiles.find((p) => p.id === profileId);
-    if (match)
-      get().triggerEmailAlert(
-        "Verification Successful!",
-        `Congratulations ${match.full_name}, your verification badge is now active.`,
-      );
   },
 
   rejectVerification: async (profileId) => {
     try {
-      const targetUser = get().profiles.find((p) => p.id === profileId);
-      const cleanedBio =
-        targetUser?.bio?.replace(" (Verification Pending)", "") || "";
       await supabase
         .from("profiles")
-        .update({ is_verified: false, bio: cleanedBio })
+        .update({ is_verified: false })
         .eq("id", profileId);
     } catch (e) {
-      console.warn("Supabase reject verification error", e);
+      console.error("Reject verification error:", e);
     }
-    const updatedProfiles = get().profiles.map((p) => {
-      if (p.id === profileId)
-        return {
-          ...p,
-          is_verified: false,
-          bio: p.bio?.replace(" (Verification Pending)", ""),
-        };
-      return p;
-    });
-    set({ profiles: updatedProfiles });
-    setStoredData("palrene_profiles", updatedProfiles);
   },
 
   moderatePost: async (postId, action) => {
     try {
-      if (action === "delete")
+      if (action === "delete") {
         await supabase.from("posts").delete().eq("id", postId);
-      else
+      } else {
         await supabase
           .from("posts")
           .update({ is_sensitive: false })
           .eq("id", postId);
+      }
     } catch (e) {
-      console.warn("Supabase moderatePost error", e);
+      console.error("Moderate post error:", e);
     }
-    const currentPosts = get().posts;
+
     const updatedPosts =
       action === "delete"
-        ? currentPosts.filter((p) => p.id !== postId)
-        : currentPosts.map((p) =>
+        ? get().posts.filter((p) => p.id !== postId)
+        : get().posts.map((p) =>
             p.id === postId ? { ...p, is_sensitive: false } : p,
           );
     set({ posts: updatedPosts });
-    setStoredData("palrene_posts", updatedPosts);
   },
 
   banUser: async (profileId) => {
@@ -2109,11 +1492,8 @@ export const useStore = create<PalreneState>((set, get) => ({
         .update({ is_active: false })
         .eq("id", profileId);
     } catch (e) {
-      console.warn("Supabase banUser error", e);
+      console.error("Ban user error:", e);
     }
-    const updatedProfiles = get().profiles.filter((p) => p.id !== profileId);
-    set({ profiles: updatedProfiles });
-    setStoredData("palrene_profiles", updatedProfiles);
   },
 
   makeAdmin: async (profileId) => {
@@ -2123,54 +1503,33 @@ export const useStore = create<PalreneState>((set, get) => ({
         .update({ is_admin: true })
         .eq("id", profileId);
     } catch (e) {
-      console.warn("Supabase makeAdmin error", e);
+      console.error("Make admin error:", e);
     }
-    const updatedProfiles = get().profiles.map((p) => {
-      if (p.id === profileId) return { ...p, is_admin: true };
-      return p;
-    });
-    set({ profiles: updatedProfiles });
-    setStoredData("palrene_profiles", updatedProfiles);
   },
 
   setSubscriptionTier: async (tier) => {
     const user = get().currentUser;
     if (!user) return;
+
     try {
       await supabase
         .from("profiles")
         .update({ subscription_tier: tier })
         .eq("id", user.id);
+      const updatedUser = { ...user, subscription_tier: tier };
+      set({ currentUser: updatedUser });
     } catch (e) {
-      console.warn("Supabase setSubscriptionTier error", e);
+      console.error("Set subscription tier error:", e);
     }
-    const updatedUser = { ...user, subscription_tier: tier };
-    const updatedProfiles = get().profiles.map((p) => {
-      if (p.id === user.id) return { ...p, subscription_tier: tier };
-      return p;
-    });
-    set({ currentUser: updatedUser, profiles: updatedProfiles });
-    setStoredData("palrene_current_user", updatedUser);
-    setStoredData("palrene_profiles", updatedProfiles);
 
-    // Reward tokens for subscription upgrade
     const bonuses: Record<string, number> = { Starter: 200, Pro: 500 };
     if (bonuses[tier]) {
-      setTimeout(
-        () =>
-          get().earnTokens(
-            bonuses[tier],
-            "subscription",
-            `${tier} subscription token bonus`,
-          ),
-        500,
+      get().earnTokens(
+        bonuses[tier],
+        "subscription",
+        `${tier} subscription token bonus`,
       );
     }
-
-    get().triggerEmailAlert(
-      "Subscription Wave Aligned!",
-      `Your account has been successfully upgraded to the "${tier}" billing plan.`,
-    );
   },
 
   addPaymentTransaction: async (tx) => {
@@ -2187,11 +1546,10 @@ export const useStore = create<PalreneState>((set, get) => ({
         },
       ]);
     } catch (e) {
-      console.warn("Supabase addPaymentTransaction error", e);
+      console.error("Add payment transaction error:", e);
     }
-    const updatedPayments = [tx, ...get().payments];
-    set({ payments: updatedPayments });
-    setStoredData("palrene_payments", updatedPayments);
+
+    set({ payments: [tx, ...get().payments] });
   },
 
   refundPaymentTransaction: async (txId) => {
@@ -2201,40 +1559,20 @@ export const useStore = create<PalreneState>((set, get) => ({
         .update({ status: "refunded" })
         .eq("id", txId);
       const tx = get().payments.find((p) => p.id === txId);
-      if (tx)
+      if (tx) {
         await supabase
           .from("profiles")
           .update({ subscription_tier: "Free" })
           .eq("id", tx.userId);
-    } catch (e) {
-      console.warn("Supabase refundPaymentTransaction error", e);
-    }
-    const updatedPayments = get().payments.map((tx) => {
-      if (tx.id === txId) {
-        const updatedProfiles = get().profiles.map((p) => {
-          if (p.id === tx.userId) {
-            get().triggerEmailAlert(
-              "Subscription Refunded",
-              `Hello ${p.full_name}, your ${tx.plan} Plan transaction has been refunded.`,
-            );
-            return { ...p, subscription_tier: "Free" as const };
-          }
-          return p;
-        });
-        const currUser = get().currentUser;
-        let updatedUser = currUser;
-        if (currUser && currUser.id === tx.userId) {
-          updatedUser = { ...currUser, subscription_tier: "Free" as const };
-          setStoredData("palrene_current_user", updatedUser);
-        }
-        set({ profiles: updatedProfiles, currentUser: updatedUser });
-        setStoredData("palrene_profiles", updatedProfiles);
-        return { ...tx, status: "refunded" as const };
       }
-      return tx;
-    });
+    } catch (e) {
+      console.error("Refund payment error:", e);
+    }
+
+    const updatedPayments = get().payments.map((tx) =>
+      tx.id === txId ? { ...tx, status: "refunded" as const } : tx,
+    );
     set({ payments: updatedPayments });
-    setStoredData("palrene_payments", updatedPayments);
   },
 
   disableSubscription: async (userId) => {
@@ -2244,47 +1582,47 @@ export const useStore = create<PalreneState>((set, get) => ({
         .update({ subscription_tier: "Free" })
         .eq("id", userId);
     } catch (e) {
-      console.warn("Supabase disableSubscription error", e);
+      console.error("Disable subscription error:", e);
     }
-    const updatedProfiles = get().profiles.map((p) => {
-      if (p.id === userId) {
-        get().triggerEmailAlert(
-          "Subscription Flagged & Paused",
-          `Hello ${p.full_name}, your subscription has been flagged and disabled.`,
-        );
-        return { ...p, subscription_tier: "Free" as const };
-      }
-      return p;
-    });
-    const currUser = get().currentUser;
-    let updatedUser = currUser;
-    if (currUser && currUser.id === userId) {
-      updatedUser = { ...currUser, subscription_tier: "Free" as const };
-      setStoredData("palrene_current_user", updatedUser);
-    }
-    set({ profiles: updatedProfiles, currentUser: updatedUser });
-    setStoredData("palrene_profiles", updatedProfiles);
   },
 
-  triggerEmailAlert: (subject, body) => {
+  triggerEmailAlert: async (subject, body) => {
+    const user = get().currentUser;
+    if (!user) return;
+
     console.log(
-      `%c[SIMULATED EMAIL SENT]\nSubject: ${subject}\nBody: ${body}`,
+      `%c[EMAIL TO: ${user.email}]\nSubject: ${subject}\nBody: ${body}`,
       "background: #f43f5e; color: white; padding: 6px; border-radius: 4px;",
     );
-    const newNotif: Notification = {
-      id: `email_notif_${Date.now()}`,
-      type: "verification",
-      content: `[Email]: ${subject}`,
-      created_at: new Date().toISOString(),
-      read: false,
-    };
-    set({ notifications: [newNotif, ...get().notifications] });
-    setStoredData("palrene_notifications", get().notifications);
+
+    try {
+      await supabase.from("notifications").insert([
+        {
+          user_id: user.id,
+          type: "system",
+          content: subject,
+        },
+      ]);
+    } catch (e) {
+      console.error("Trigger email alert error:", e);
+    }
   },
 
-  deleteNotification: (id) => {
+  deleteNotification: async (id) => {
+    const user = get().currentUser;
+    if (!user) return;
+
+    try {
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+    } catch (e) {
+      console.error("Delete notification error:", e);
+    }
+
     const remaining = get().notifications.filter((notif) => notif.id !== id);
     set({ notifications: remaining });
-    setStoredData("palrene_notifications", remaining);
   },
 }));

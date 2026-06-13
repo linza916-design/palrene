@@ -31,23 +31,28 @@ export interface OnboardingProfile {
 
 const DB_TIMEOUT = 8000;
 
-function withTimeout<T>(promise: Promise<T>, ms: number = DB_TIMEOUT): Promise<T> {
+function withTimeout<T = any>(
+  promise: Promise<T>,
+  ms: number = DB_TIMEOUT,
+): Promise<T> {
   return Promise.race([
     promise,
     new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Database request timed out")), ms)
+      setTimeout(() => reject(new Error("Database request timed out")), ms),
     ),
-  ]);
+  ]) as Promise<T>;
 }
 
-export async function getOnboardingProfile(userId: string): Promise<OnboardingProfile | null> {
+export async function getOnboardingProfile(
+  userId: string,
+): Promise<OnboardingProfile | null> {
   try {
     const { data, error } = await withTimeout(
       supabase
         .from("onboarding_profiles")
         .select("*")
         .eq("id", userId)
-        .maybeSingle()
+        .maybeSingle(),
     );
 
     if (error) {
@@ -61,15 +66,26 @@ export async function getOnboardingProfile(userId: string): Promise<OnboardingPr
   }
 }
 
-export async function ensureOnboardingProfile(userId: string, initialData?: Partial<OnboardingProfile>): Promise<OnboardingProfile | null> {
+export async function ensureOnboardingProfile(
+  userId: string,
+  initialData?: Partial<OnboardingProfile>,
+): Promise<OnboardingProfile | null> {
   // Try to fetch existing profile first
   const existing = await getOnboardingProfile(userId);
   if (existing) return existing;
 
   // No profile exists — create one via upsert
   const { data: user } = await supabase.auth.getUser();
-  const name = user?.user_metadata?.full_name || user?.user_metadata?.name || initialData?.full_name || "";
-  const avatar = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || initialData?.avatar_url || "";
+  const name =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    initialData?.full_name ||
+    "";
+  const avatar =
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    initialData?.avatar_url ||
+    "";
   const email = user?.email || initialData?.email || "";
   const provider = user?.app_metadata?.provider || "email";
 
@@ -88,10 +104,10 @@ export async function ensureOnboardingProfile(userId: string, initialData?: Part
             profile_completed: false,
             ...initialData,
           },
-          { onConflict: "id" }
+          { onConflict: "id" },
         )
         .select()
-        .single()
+        .single(),
     );
 
     if (error) {
@@ -105,7 +121,10 @@ export async function ensureOnboardingProfile(userId: string, initialData?: Part
   }
 }
 
-export async function createOnboardingProfile(userId: string, data: Partial<OnboardingProfile>): Promise<OnboardingProfile | null> {
+export async function createOnboardingProfile(
+  userId: string,
+  data: Partial<OnboardingProfile>,
+): Promise<OnboardingProfile | null> {
   const { data: profile, error } = await supabase
     .from("onboarding_profiles")
     .insert({ id: userId, ...data })
@@ -119,7 +138,10 @@ export async function createOnboardingProfile(userId: string, data: Partial<Onbo
   return profile;
 }
 
-export async function upsertOnboardingProfile(userId: string, data: Partial<OnboardingProfile>): Promise<OnboardingProfile | null> {
+export async function upsertOnboardingProfile(
+  userId: string,
+  data: Partial<OnboardingProfile>,
+): Promise<OnboardingProfile | null> {
   const { data: profile, error } = await supabase
     .from("onboarding_profiles")
     .upsert({ id: userId, ...data }, { onConflict: "id" })
@@ -133,13 +155,17 @@ export async function upsertOnboardingProfile(userId: string, data: Partial<Onbo
   return profile;
 }
 
-export async function updateOnboardingStep(userId: string, step: number, stepData: Partial<OnboardingProfile>): Promise<boolean> {
+export async function updateOnboardingStep(
+  userId: string,
+  step: number,
+  stepData: Partial<OnboardingProfile>,
+): Promise<boolean> {
   try {
     const { error } = await withTimeout(
       supabase
         .from("onboarding_profiles")
         .update({ onboarding_step: step, ...stepData })
-        .eq("id", userId)
+        .eq("id", userId),
     );
 
     if (error) {
@@ -153,13 +179,16 @@ export async function updateOnboardingStep(userId: string, step: number, stepDat
   }
 }
 
-export async function completeOnboarding(userId: string, finalData: Partial<OnboardingProfile>): Promise<boolean> {
+export async function completeOnboarding(
+  userId: string,
+  finalData: Partial<OnboardingProfile>,
+): Promise<boolean> {
   try {
     const { error } = await withTimeout(
       supabase
         .from("onboarding_profiles")
         .update({ profile_completed: true, onboarding_step: 8, ...finalData })
-        .eq("id", userId)
+        .eq("id", userId),
     );
 
     if (error) {
@@ -173,14 +202,16 @@ export async function completeOnboarding(userId: string, finalData: Partial<Onbo
   }
 }
 
-export async function checkUsernameAvailable(username: string): Promise<boolean> {
+export async function checkUsernameAvailable(
+  username: string,
+): Promise<boolean> {
   try {
     const { data } = await withTimeout(
       supabase
         .from("onboarding_profiles")
         .select("id")
         .eq("username", username.toLowerCase())
-        .maybeSingle()
+        .maybeSingle(),
     );
     return !data;
   } catch (err) {
@@ -199,10 +230,12 @@ export function generateUsernameFromName(name: string): string[] {
     `${base}world`,
     `${base}${new Date().getFullYear()}`,
   ];
-  return suggestions.filter(s => s.length >= 3 && s.length <= 30);
+  return suggestions.filter((s) => s.length >= 3 && s.length <= 30);
 }
 
-export function isOnboardingComplete(profile: OnboardingProfile | null): boolean {
+export function isOnboardingComplete(
+  profile: OnboardingProfile | null,
+): boolean {
   if (!profile) return false;
   return profile.profile_completed === true;
 }

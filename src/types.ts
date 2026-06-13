@@ -31,6 +31,7 @@ export interface Profile {
   verification_doc_back_url?: string;
   relationship_status?: RelationshipStatus;
   token_balance?: number;
+  created_at?: string;
 }
 
 export interface Connection {
@@ -76,6 +77,7 @@ export interface Post {
   };
   views_count?: number;
   category?: string;
+  group_id?: string;
 }
 
 export interface Comment {

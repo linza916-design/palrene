@@ -11,7 +11,7 @@ export default function FeedFilters({
   selectedCategory,
   onSelectCategory,
   showSensitive,
-  onToggleSensitive
+  onToggleSensitive,
 }: FeedFiltersProps) {
   const categories = [
     { id: "all", label: "✨ All Resonance" },
@@ -21,7 +21,7 @@ export default function FeedFilters({
     { id: "travel", label: "🧭 Wanderlust" },
     { id: "books", label: "📚 Philosophy" },
     { id: "memes", label: "🎭 Memes" },
-    { id: "foods", label: "🍜 Culinary Arts" }
+    { id: "foods", label: "🍜 Culinary Arts" },
   ];
 
   return (
@@ -34,7 +34,7 @@ export default function FeedFilters({
             onClick={() => onSelectCategory(cat.id)}
             className={`px-3.5 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition duration-300 outline-none ${
               selectedCategory === cat.id
-                ? "bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold shadow-sm focus:ring-1 focus:ring-orange-300"
+                ? "bg-linear-to-r from-red-500 to-orange-500 text-white font-semibold shadow-sm focus:ring-1 focus:ring-orange-300"
                 : "bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
             }`}
           >

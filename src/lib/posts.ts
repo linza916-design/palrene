@@ -165,6 +165,7 @@ export async function createPost(
     is_sensitive?: boolean;
     category?: string;
     quiz?: DbPost["quiz"];
+    group_id?: string;
   },
 ): Promise<PostWithProfile | null> {
   const { data, error } = await supabase
@@ -178,6 +179,7 @@ export async function createPost(
       is_sensitive: options?.is_sensitive || false,
       category: options?.category || "General",
       quiz: options?.quiz,
+      group_id: options?.group_id || null,
     })
     .select(
       `
@@ -617,4 +619,39 @@ export async function incrementViewCount(
       .update({ views_count: supabase.rpc("increment") as unknown as number })
       .eq("id", postId);
   }
+}
+
+export async function getGroupPosts(groupId: string, limit = 20): Promise<PostWithProfile[]> {
+  const { data, error } = await supabase
+    .from("posts")
+    .select(`
+      *,
+      profiles!posts_user_id_fkey (
+        id, full_name, username, avatar_url, is_verified
+      )
+    `)
+    .eq("group_id", groupId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  return data.map((p: any) => ({
+    id: p.id,
+    userId: p.user_id,
+    profile: p.profiles || {},
+    content: p.content,
+    created_at: p.created_at,
+    media_urls: p.media_urls,
+    giphy_url: p.giphy_url,
+    video_url: p.video_url,
+    likes_count: p.likes_count,
+    comments_count: p.comments_count,
+    reposts_count: p.reposts_count,
+    views_count: p.views_count,
+    boosted: p.boosted,
+    is_sensitive: p.is_sensitive,
+    category: p.category,
+    group_id: groupId,
+  }));
 }

@@ -15,7 +15,7 @@ const typingChannels = new Map<string, ReturnType<typeof supabase.channel>>();
 export function subscribeToTyping(
   postId: string,
   currentUserId: string,
-  onTypingUpdate: (users: TypingUser[]) => void
+  onTypingUpdate: (users: TypingUser[]) => void,
 ) {
   const channelName = `${TYPING_CHANNEL_PREFIX}${postId}`;
 
@@ -28,7 +28,7 @@ export function subscribeToTyping(
       },
     })
     .on("presence", { event: "sync" }, () => {
-      const state = channel.presenceState<TypingUser>();
+      const state = channel.presenceState() as Record<string, TypingUser[]>;
       const users: TypingUser[] = [];
 
       Object.entries(state).forEach(([userId, presences]) => {
@@ -54,7 +54,7 @@ export function subscribeToTyping(
 
 export async function setTyping(
   postId: string,
-  user: { id: string; username: string; avatar_url: string }
+  user: { id: string; username: string; avatar_url: string },
 ) {
   const channel = typingChannels.get(postId);
   if (!channel) return;

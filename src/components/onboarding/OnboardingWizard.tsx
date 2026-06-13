@@ -1,6 +1,26 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowRight, ArrowLeft, Check, Sparkles, User, AtSign, Camera, MapPin, Briefcase, Heart, Link, Target, PartyPopper, RefreshCw, X, Github, Globe, Loader, TriangleAlert as AlertTriangle } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Sparkles,
+  User,
+  AtSign,
+  Camera,
+  MapPin,
+  Briefcase,
+  Heart,
+  Link,
+  Target,
+  PartyPopper,
+  RefreshCw,
+  X,
+  Github,
+  Globe,
+  Loader,
+  TriangleAlert as AlertTriangle,
+} from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import {
   getOnboardingProfile,
@@ -19,18 +39,59 @@ import { useStore } from "../../store";
 const TOTAL_STEPS = 8;
 
 const ALL_INTERESTS = [
-  "relationships", "music", "science", "travel", "nature", "foods",
-  "gaming", "spirituality", "entrepreneurship", "memes", "photography",
-  "art", "fitness", "reading", "cooking", "hiking", "yoga", "meditation",
-  "movies", "technology", "fashion", "sports", "politics", "philosophy",
-  "history", "writing", "dancing", "volunteering", "pets", "astronomy",
+  "relationships",
+  "music",
+  "science",
+  "travel",
+  "nature",
+  "foods",
+  "gaming",
+  "spirituality",
+  "entrepreneurship",
+  "memes",
+  "photography",
+  "art",
+  "fitness",
+  "reading",
+  "cooking",
+  "hiking",
+  "yoga",
+  "meditation",
+  "movies",
+  "technology",
+  "fashion",
+  "sports",
+  "politics",
+  "philosophy",
+  "history",
+  "writing",
+  "dancing",
+  "volunteering",
+  "pets",
+  "astronomy",
 ];
 
 const ALL_SKILLS = [
-  "Communication", "Leadership", "Empathy", "Problem Solving", "Creativity",
-  "Writing", "Design", "Coding", "Marketing", "Data Analysis", "Teaching",
-  "Photography", "Music", "Video Production", "Public Speaking", "Research",
-  "Project Management", "Sales", "Finance", "Coaching",
+  "Communication",
+  "Leadership",
+  "Empathy",
+  "Problem Solving",
+  "Creativity",
+  "Writing",
+  "Design",
+  "Coding",
+  "Marketing",
+  "Data Analysis",
+  "Teaching",
+  "Photography",
+  "Music",
+  "Video Production",
+  "Public Speaking",
+  "Research",
+  "Project Management",
+  "Sales",
+  "Finance",
+  "Coaching",
 ];
 
 const GOALS = [
@@ -49,12 +110,14 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
   return (
     <div className="w-full space-y-1.5">
       <div className="flex justify-between text-[10px] font-mono text-white/40">
-        <span>Step {step} of {total}</span>
+        <span>
+          Step {step} of {total}
+        </span>
         <span>{pct}% complete</span>
       </div>
       <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
         <motion.div
-          className="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full"
+          className="h-full bg-linear-to-r from-red-500 to-orange-500 rounded-full"
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         />
@@ -63,7 +126,13 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
   );
 }
 
-function StepMotion({ children, dir = 1 }: { children: React.ReactNode; dir?: number }) {
+function StepMotion({
+  children,
+  dir = 1,
+}: {
+  children: React.ReactNode;
+  dir?: number;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, x: dir * 40 }}
@@ -79,14 +148,38 @@ function StepMotion({ children, dir = 1 }: { children: React.ReactNode; dir?: nu
 
 function MicroCopy({ step }: { step: number }) {
   const copies: Record<number, { title: string; sub: string }> = {
-    1: { title: "Welcome to Palrene!", sub: "Let's build your profile — it takes under 2 minutes." },
-    2: { title: "Choose your username", sub: "Your unique handle. Make it memorable." },
-    3: { title: "Add a profile photo", sub: "Profiles with photos get 10x more connections." },
-    4: { title: "Tell your story", sub: "A great bio attracts your kind of people." },
-    5: { title: "What are you into?", sub: "Select interests to personalize your experience." },
-    6: { title: "Connect your links", sub: "Optional — show your world beyond Palrene." },
-    7: { title: "What brings you here?", sub: "Help us match you with the right people." },
-    8: { title: "You're all set!", sub: "Welcome to a world of meaningful connections." },
+    1: {
+      title: "Welcome to Palrene!",
+      sub: "Let's build your profile — it takes under 2 minutes.",
+    },
+    2: {
+      title: "Choose your username",
+      sub: "Your unique handle. Make it memorable.",
+    },
+    3: {
+      title: "Add a profile photo",
+      sub: "Profiles with photos get 10x more connections.",
+    },
+    4: {
+      title: "Tell your story",
+      sub: "A great bio attracts your kind of people.",
+    },
+    5: {
+      title: "What are you into?",
+      sub: "Select interests to personalize your experience.",
+    },
+    6: {
+      title: "Connect your links",
+      sub: "Optional — show your world beyond Palrene.",
+    },
+    7: {
+      title: "What brings you here?",
+      sub: "Help us match you with the right people.",
+    },
+    8: {
+      title: "You're all set!",
+      sub: "Welcome to a world of meaningful connections.",
+    },
   };
   const c = copies[step] || copies[1];
   return (
@@ -101,7 +194,9 @@ interface OnboardingWizardProps {
   onComplete: () => void;
 }
 
-export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
+export default function OnboardingWizard({
+  onComplete,
+}: OnboardingWizardProps) {
   const { setCurrentUser } = useStore();
   const [step, setStep] = useState(1);
   const [dir, setDir] = useState(1);
@@ -117,9 +212,13 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   // Step 2 — username
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [usernameStatus, setUsernameStatus] = useState<
+    "idle" | "checking" | "available" | "taken"
+  >("idle");
   const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
-  const usernameTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const usernameTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
 
   // Step 3 — avatar
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -151,13 +250,23 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   // Load initial user data and resume from saved step
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setInitialLoading(false); return; }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setInitialLoading(false);
+        return;
+      }
       setUserId(user.id);
 
-      const name = user.user_metadata?.full_name || user.user_metadata?.name || "";
-      const avatar = user.user_metadata?.avatar_url || user.user_metadata?.picture || "";
-      const ghUsername = user.user_metadata?.user_name || user.user_metadata?.preferred_username || "";
+      const name =
+        user.user_metadata?.full_name || user.user_metadata?.name || "";
+      const avatar =
+        user.user_metadata?.avatar_url || user.user_metadata?.picture || "";
+      const ghUsername =
+        user.user_metadata?.user_name ||
+        user.user_metadata?.preferred_username ||
+        "";
 
       setOauthName(name);
       setOauthAvatar(avatar);
@@ -172,7 +281,9 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
       if (!profile) {
         // Could not create profile — show error with retry
-        setLoadError("Could not load your profile. Please check your connection and try again.");
+        setLoadError(
+          "Could not load your profile. Please check your connection and try again.",
+        );
         setInitialLoading(false);
         return;
       }
@@ -203,7 +314,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
       if (profile.location) setLocation(profile.location);
       if (profile.interests?.length) setInterests(profile.interests);
       if (profile.skills?.length) setSkills(profile.skills);
-      if (profile.recognition_goals?.length) setGoals(profile.recognition_goals);
+      if (profile.recognition_goals?.length)
+        setGoals(profile.recognition_goals);
       if (profile.social_links) {
         const sl = profile.social_links as any;
         if (sl.github) setGithub(sl.github);
@@ -220,7 +332,10 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
   // Username check with timeout — won't block indefinitely
   useEffect(() => {
-    if (!username || username.length < 3) { setUsernameStatus("idle"); return; }
+    if (!username || username.length < 3) {
+      setUsernameStatus("idle");
+      return;
+    }
     setUsernameStatus("checking");
     clearTimeout(usernameTimeout.current);
     usernameTimeout.current = setTimeout(async () => {
@@ -231,7 +346,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
     // Safety timeout: if check takes more than 5s, allow proceed
     const safetyTimeout = setTimeout(() => {
-      setUsernameStatus((prev) => prev === "checking" ? "available" : prev);
+      setUsernameStatus((prev) => (prev === "checking" ? "available" : prev));
     }, 5000);
 
     return () => clearTimeout(safetyTimeout);
@@ -268,7 +383,10 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     }
   };
 
-  const saveStep = async (nextStep: number, extraData: Partial<OnboardingProfile> = {}) => {
+  const saveStep = async (
+    nextStep: number,
+    extraData: Partial<OnboardingProfile> = {},
+  ) => {
     if (!userId) return;
     setSaving(true);
     await updateOnboardingStep(userId, nextStep, extraData);
@@ -280,10 +398,24 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     if (!userId) return;
 
     if (step === 2) {
-      if (!username || username.length < 3) { setError("Username must be at least 3 characters."); return; }
-      if (!/^[a-z0-9_]+$/.test(username)) { setError("Username can only contain lowercase letters, numbers, and underscores."); return; }
-      if (usernameStatus === "taken") { setError("That username is taken. Please choose another."); return; }
-      if (usernameStatus === "checking") { setError("Please wait for username check."); return; }
+      if (!username || username.length < 3) {
+        setError("Username must be at least 3 characters.");
+        return;
+      }
+      if (!/^[a-z0-9_]+$/.test(username)) {
+        setError(
+          "Username can only contain lowercase letters, numbers, and underscores.",
+        );
+        return;
+      }
+      if (usernameStatus === "taken") {
+        setError("That username is taken. Please choose another.");
+        return;
+      }
+      if (usernameStatus === "checking") {
+        setError("Please wait for username check.");
+        return;
+      }
     }
 
     if (step === 5 && interests.length < 3) {
@@ -317,7 +449,9 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
     if (!saved) {
       // Save failed — still advance UI but warn user
-      setError("Could not save your progress. Check your connection — your data will be saved on the next step.");
+      setError(
+        "Could not save your progress. Check your connection — your data will be saved on the next step.",
+      );
     }
 
     setDir(1);
@@ -328,7 +462,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     if (step <= 1) return;
     setError("");
     setDir(-1);
-    setStep(s => s - 1);
+    setStep((s) => s - 1);
   };
 
   const handleComplete = async () => {
@@ -337,9 +471,11 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     setError("");
 
     // Never save blob: URLs to the DB
-    const safeAvatarUrl = avatarUrl.startsWith("blob:") ? (oauthAvatar || "") : avatarUrl;
+    const safeAvatarUrl = avatarUrl.startsWith("blob:")
+      ? oauthAvatar || ""
+      : avatarUrl;
 
-    const finalData: Partial<OnboardingProfile> = {
+    const finalData: Partial<OnboardingProfile> & { token_balance?: number } = {
       username: username.toLowerCase(),
       full_name: displayName,
       avatar_url: safeAvatarUrl,
@@ -374,24 +510,31 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
       // Call onComplete immediately — no setTimeout delay
       onComplete();
     } else {
-      setError("Failed to save profile. Please check your connection and try again.");
+      setError(
+        "Failed to save profile. Please check your connection and try again.",
+      );
     }
     setSaving(false);
   };
 
-  const filteredInterests = ALL_INTERESTS.filter(i =>
-    !interestSearch || i.toLowerCase().includes(interestSearch.toLowerCase())
+  const filteredInterests = ALL_INTERESTS.filter(
+    (i) =>
+      !interestSearch || i.toLowerCase().includes(interestSearch.toLowerCase()),
   );
 
   if (initialLoading) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
-            <span className="font-serif text-xl font-bold text-white italic">P</span>
+          <div className="relative w-12 h-12 rounded-xl bg-linear-to-br from-red-500 to-orange-500 flex items-center justify-center">
+            <span className="font-serif text-xl font-bold text-white italic">
+              P
+            </span>
             <div className="absolute inset-0 rounded-xl border-2 border-orange-400/60 animate-ping" />
           </div>
-          <p className="text-sm font-mono text-white/40 animate-pulse">Loading your profile...</p>
+          <p className="text-sm font-mono text-white/40 animate-pulse">
+            Loading your profile...
+          </p>
         </div>
       </div>
     );
@@ -406,12 +549,14 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             <AlertTriangle size={32} className="text-red-400" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Something went wrong</h2>
+            <h2 className="text-lg font-bold text-white">
+              Something went wrong
+            </h2>
             <p className="text-sm text-white/50 mt-2">{loadError}</p>
           </div>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2.5 bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold rounded-xl hover:from-red-600 hover:to-orange-600 transition"
+            className="px-6 py-2.5 bg-linear-to-r from-red-500 to-orange-500 text-white font-semibold rounded-xl hover:from-red-600 hover:to-orange-600 transition"
           >
             Try Again
           </button>
@@ -433,7 +578,12 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         <motion.div
           className="absolute w-80 h-80 rounded-full bg-orange-500/8 blur-3xl"
           animate={{ x: [30, -30, 30], y: [20, -20, 20] }}
-          transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+          transition={{
+            duration: 16,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 4,
+          }}
           style={{ bottom: "10%", right: "-5%" }}
         />
       </div>
@@ -441,10 +591,14 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 shadow-lg shadow-orange-500/30">
-            <span className="font-serif text-base font-bold text-white italic">P</span>
+          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-linear-to-br from-red-500 to-orange-500 shadow-lg shadow-orange-500/30">
+            <span className="font-serif text-base font-bold text-white italic">
+              P
+            </span>
           </div>
-          <span className="text-lg font-serif font-bold text-white">Palrene</span>
+          <span className="text-lg font-serif font-bold text-white">
+            Palrene
+          </span>
         </div>
 
         <ProgressBar step={step} total={TOTAL_STEPS} />
@@ -468,30 +622,38 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <MicroCopy step={1} />
                 <div className="flex flex-col items-center gap-6">
                   <div className="relative">
-                    <div className="w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-orange-500/20 to-red-500/20 border-2 border-orange-500/30">
+                    <div className="w-24 h-24 rounded-2xl overflow-hidden bg-linear-to-br from-orange-500/20 to-red-500/20 border-2 border-orange-500/30">
                       {oauthAvatar ? (
-                        <img src={oauthAvatar} alt="" className="w-full h-full object-cover" />
+                        <img
+                          src={oauthAvatar}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <User size={36} className="text-orange-400/60" />
                         </div>
                       )}
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center border-2 border-zinc-900">
+                    <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-linear-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center border-2 border-zinc-900">
                       <Sparkles size={12} className="text-white fill-current" />
                     </div>
                   </div>
 
                   {oauthName ? (
                     <div className="text-center">
-                      <p className="text-lg font-bold text-white">Hi, {oauthName.split(" ")[0]}!</p>
+                      <p className="text-lg font-bold text-white">
+                        Hi, {oauthName.split(" ")[0]}!
+                      </p>
                       <p className="text-sm text-white/50 mt-1">
-                        Welcome to Palrene. Let's set up your profile so the right people can find you.
+                        Welcome to Palrene. Let's set up your profile so the
+                        right people can find you.
                       </p>
                     </div>
                   ) : (
                     <p className="text-sm text-white/50 text-center">
-                      Welcome to Palrene. Let's set up your profile so the right people can find you.
+                      Welcome to Palrene. Let's set up your profile so the right
+                      people can find you.
                     </p>
                   )}
 
@@ -500,10 +662,17 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                       { label: "Step 1", sub: "Basic info" },
                       { label: "Step 4", sub: "Your story" },
                       { label: "Step 8", sub: "Done!" },
-                    ].map(item => (
-                      <div key={item.label} className="p-3 bg-white/5 rounded-xl border border-white/8">
-                        <p className="text-xs font-bold text-orange-400">{item.label}</p>
-                        <p className="text-[10px] text-white/40 mt-0.5">{item.sub}</p>
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className="p-3 bg-white/5 rounded-xl border border-white/8"
+                      >
+                        <p className="text-xs font-bold text-orange-400">
+                          {item.label}
+                        </p>
+                        <p className="text-[10px] text-white/40 mt-0.5">
+                          {item.sub}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -517,13 +686,18 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <MicroCopy step={2} />
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-wider">Display Name</label>
+                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
+                      Display Name
+                    </label>
                     <div className="relative">
-                      <User size={15} className="absolute left-3.5 top-3.5 text-white/30" />
+                      <User
+                        size={15}
+                        className="absolute left-3.5 top-3.5 text-white/30"
+                      />
                       <input
                         type="text"
                         value={displayName}
-                        onChange={e => setDisplayName(e.target.value)}
+                        onChange={(e) => setDisplayName(e.target.value)}
                         placeholder="Your full name"
                         className="w-full py-3 pl-10 pr-4 text-sm text-white bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-orange-500/50 transition placeholder-white/25"
                       />
@@ -531,35 +705,60 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-wider">Username</label>
+                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
+                      Username
+                    </label>
                     <div className="relative">
-                      <AtSign size={15} className="absolute left-3.5 top-3.5 text-white/30" />
+                      <AtSign
+                        size={15}
+                        className="absolute left-3.5 top-3.5 text-white/30"
+                      />
                       <input
                         type="text"
                         value={username}
-                        onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                        onChange={(e) =>
+                          setUsername(
+                            e.target.value
+                              .toLowerCase()
+                              .replace(/[^a-z0-9_]/g, ""),
+                          )
+                        }
                         placeholder="your_unique_handle"
                         maxLength={30}
                         className={`w-full py-3 pl-10 pr-10 text-sm text-white bg-white/5 border rounded-xl focus:outline-none transition placeholder-white/25 ${
-                          usernameStatus === "available" ? "border-green-500/50 focus:border-green-500/80" :
-                          usernameStatus === "taken" ? "border-red-500/50 focus:border-red-500/80" :
-                          "border-white/10 focus:border-orange-500/50"
+                          usernameStatus === "available"
+                            ? "border-green-500/50 focus:border-green-500/80"
+                            : usernameStatus === "taken"
+                              ? "border-red-500/50 focus:border-red-500/80"
+                              : "border-white/10 focus:border-orange-500/50"
                         }`}
                       />
                       <div className="absolute right-3 top-3">
-                        {usernameStatus === "checking" && <Loader size={14} className="animate-spin text-white/40" />}
-                        {usernameStatus === "available" && <Check size={14} className="text-green-400" />}
-                        {usernameStatus === "taken" && <X size={14} className="text-red-400" />}
+                        {usernameStatus === "checking" && (
+                          <Loader
+                            size={14}
+                            className="animate-spin text-white/40"
+                          />
+                        )}
+                        {usernameStatus === "available" && (
+                          <Check size={14} className="text-green-400" />
+                        )}
+                        {usernameStatus === "taken" && (
+                          <X size={14} className="text-red-400" />
+                        )}
                       </div>
                     </div>
 
                     {usernameStatus === "taken" && (
-                      <p className="text-[11px] text-red-400">Username taken. Try one of these:</p>
+                      <p className="text-[11px] text-red-400">
+                        Username taken. Try one of these:
+                      </p>
                     )}
 
-                    {(usernameStatus === "taken" || usernameSuggestions.length > 0) && (
+                    {(usernameStatus === "taken" ||
+                      usernameSuggestions.length > 0) && (
                       <div className="flex flex-wrap gap-1.5">
-                        {usernameSuggestions.map(s => (
+                        {usernameSuggestions.map((s) => (
                           <button
                             key={s}
                             onClick={() => setUsername(s)}
@@ -587,9 +786,13 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <MicroCopy step={3} />
                 <div className="flex flex-col items-center gap-5">
                   <div className="relative group">
-                    <div className="w-28 h-28 rounded-2xl overflow-hidden bg-gradient-to-br from-orange-500/20 to-red-500/20 border-2 border-white/10">
+                    <div className="w-28 h-28 rounded-2xl overflow-hidden bg-linear-to-br from-orange-500/20 to-red-500/20 border-2 border-white/10">
                       {avatarPreview ? (
-                        <img src={avatarPreview} alt="" className="w-full h-full object-cover" />
+                        <img
+                          src={avatarPreview}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <User size={40} className="text-white/20" />
@@ -598,26 +801,42 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                     </div>
                     {avatarUploading && (
                       <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center">
-                        <Loader size={20} className="animate-spin text-orange-400" />
+                        <Loader
+                          size={20}
+                          className="animate-spin text-orange-400"
+                        />
                       </div>
                     )}
                   </div>
 
                   <label className="flex flex-col items-center justify-center w-full p-4 border-2 border-dashed border-white/15 rounded-2xl cursor-pointer hover:border-orange-500/40 hover:bg-orange-500/5 transition group">
-                    <Camera size={22} className="text-white/30 group-hover:text-orange-400 transition mb-2" />
-                    <span className="text-sm text-white/50 group-hover:text-white/70 transition">Upload photo</span>
-                    <span className="text-[10px] text-white/25 mt-0.5">PNG, JPG, GIF up to 5MB</span>
+                    <Camera
+                      size={22}
+                      className="text-white/30 group-hover:text-orange-400 transition mb-2"
+                    />
+                    <span className="text-sm text-white/50 group-hover:text-white/70 transition">
+                      Upload photo
+                    </span>
+                    <span className="text-[10px] text-white/25 mt-0.5">
+                      PNG, JPG, GIF up to 5MB
+                    </span>
                     <input
                       type="file"
                       accept="image/*"
                       className="sr-only"
-                      onChange={e => { const f = e.target.files?.[0]; if (f) handleAvatarFile(f); }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleAvatarFile(f);
+                      }}
                     />
                   </label>
 
                   {oauthAvatar && oauthAvatar !== avatarUrl && (
                     <button
-                      onClick={() => { setAvatarUrl(oauthAvatar); setAvatarPreview(oauthAvatar); }}
+                      onClick={() => {
+                        setAvatarUrl(oauthAvatar);
+                        setAvatarPreview(oauthAvatar);
+                      }}
                       className="text-[11px] font-mono text-orange-400 hover:text-orange-300 transition"
                     >
                       Use photo from Google/GitHub instead
@@ -637,35 +856,46 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <MicroCopy step={4} />
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-wider">Bio</label>
+                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
+                      Bio
+                    </label>
                     <textarea
                       value={bio}
-                      onChange={e => setBio(e.target.value)}
+                      onChange={(e) => setBio(e.target.value)}
                       placeholder="What makes you, you? What are you looking for?"
                       maxLength={200}
                       className="w-full h-20 p-3 text-sm text-white bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-orange-500/50 transition placeholder-white/25 resize-none"
                     />
-                    <p className="text-right text-[10px] text-white/25">{bio.length}/200</p>
+                    <p className="text-right text-[10px] text-white/25">
+                      {bio.length}/200
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-mono text-white/40 uppercase tracking-wider">Profession</label>
+                      <label className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
+                        Profession
+                      </label>
                       <div className="relative">
-                        <Briefcase size={13} className="absolute left-3 top-3.5 text-white/30" />
+                        <Briefcase
+                          size={13}
+                          className="absolute left-3 top-3.5 text-white/30"
+                        />
                         <input
                           value={profession}
-                          onChange={e => setProfession(e.target.value)}
+                          onChange={(e) => setProfession(e.target.value)}
                           placeholder="e.g. Designer"
                           className="w-full py-2.5 pl-9 pr-3 text-sm text-white bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-orange-500/50 transition placeholder-white/25"
                         />
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-mono text-white/40 uppercase tracking-wider">Company</label>
+                      <label className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
+                        Company
+                      </label>
                       <input
                         value={company}
-                        onChange={e => setCompany(e.target.value)}
+                        onChange={(e) => setCompany(e.target.value)}
                         placeholder="e.g. Acme Inc."
                         className="w-full py-2.5 px-3 text-sm text-white bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-orange-500/50 transition placeholder-white/25"
                       />
@@ -673,12 +903,17 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-wider">Location</label>
+                    <label className="text-[10px] font-mono text-white/40 uppercase tracking-wider">
+                      Location
+                    </label>
                     <div className="relative">
-                      <MapPin size={13} className="absolute left-3 top-3.5 text-white/30" />
+                      <MapPin
+                        size={13}
+                        className="absolute left-3 top-3.5 text-white/30"
+                      />
                       <input
                         value={location}
-                        onChange={e => setLocation(e.target.value)}
+                        onChange={(e) => setLocation(e.target.value)}
                         placeholder="e.g. Nairobi, Kenya"
                         className="w-full py-2.5 pl-9 pr-3 text-sm text-white bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-orange-500/50 transition placeholder-white/25"
                       />
@@ -695,24 +930,28 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <div className="space-y-4">
                   <input
                     value={interestSearch}
-                    onChange={e => setInterestSearch(e.target.value)}
+                    onChange={(e) => setInterestSearch(e.target.value)}
                     placeholder="Search interests..."
                     className="w-full py-2.5 px-4 text-sm text-white bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-orange-500/50 transition placeholder-white/25"
                   />
 
                   <div className="max-h-36 overflow-y-auto">
                     <div className="flex flex-wrap gap-2">
-                      {filteredInterests.map(interest => {
+                      {filteredInterests.map((interest) => {
                         const selected = interests.includes(interest);
                         return (
                           <motion.button
                             key={interest}
-                            onClick={() => setInterests(prev =>
-                              prev.includes(interest) ? prev.filter(i => i !== interest) : [...prev, interest]
-                            )}
+                            onClick={() =>
+                              setInterests((prev) =>
+                                prev.includes(interest)
+                                  ? prev.filter((i) => i !== interest)
+                                  : [...prev, interest],
+                              )
+                            }
                             className={`px-3 py-1.5 text-xs rounded-full border transition-all ${
                               selected
-                                ? "bg-gradient-to-r from-red-500 to-orange-500 border-transparent text-white font-semibold"
+                                ? "bg-linear-to-r from-red-500 to-orange-500 border-transparent text-white font-semibold"
                                 : "bg-white/5 border-white/10 text-white/60 hover:border-white/25"
                             }`}
                             whileTap={{ scale: 0.95 }}
@@ -725,16 +964,22 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                   </div>
 
                   <div className="border-t border-white/8 pt-3">
-                    <p className="text-[10px] font-mono text-white/40 mb-2 uppercase">Skills (optional)</p>
+                    <p className="text-[10px] font-mono text-white/40 mb-2 uppercase">
+                      Skills (optional)
+                    </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {ALL_SKILLS.map(skill => {
+                      {ALL_SKILLS.map((skill) => {
                         const selected = skills.includes(skill);
                         return (
                           <button
                             key={skill}
-                            onClick={() => setSkills(prev =>
-                              prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]
-                            )}
+                            onClick={() =>
+                              setSkills((prev) =>
+                                prev.includes(skill)
+                                  ? prev.filter((s) => s !== skill)
+                                  : [...prev, skill],
+                              )
+                            }
                             className={`px-2.5 py-1 text-[10px] rounded-lg border transition ${
                               selected
                                 ? "bg-orange-500/20 border-orange-500/40 text-orange-300"
@@ -750,7 +995,9 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
                   <p className="text-[10px] text-white/30">
                     {interests.length}/3 minimum selected
-                    {interests.length >= 3 && <span className="text-green-400 ml-1">✓ Good to go!</span>}
+                    {interests.length >= 3 && (
+                      <span className="text-green-400 ml-1">✓ Good to go!</span>
+                    )}
                   </p>
                 </div>
               </StepMotion>
@@ -762,25 +1009,56 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <MicroCopy step={6} />
                 <div className="space-y-3">
                   {[
-                    { icon: Github, label: "GitHub", value: github, set: setGithub, placeholder: "github_username" },
-                    { icon: Heart, label: "X / Twitter", value: twitter, set: setTwitter, placeholder: "@handle" },
-                    { icon: Link, label: "LinkedIn", value: linkedin, set: setLinkedin, placeholder: "linkedin.com/in/you" },
-                    { icon: Globe, label: "Website", value: website, set: setWebsite, placeholder: "https://yoursite.com" },
+                    {
+                      icon: Github,
+                      label: "GitHub",
+                      value: github,
+                      set: setGithub,
+                      placeholder: "github_username",
+                    },
+                    {
+                      icon: Heart,
+                      label: "X / Twitter",
+                      value: twitter,
+                      set: setTwitter,
+                      placeholder: "@handle",
+                    },
+                    {
+                      icon: Link,
+                      label: "LinkedIn",
+                      value: linkedin,
+                      set: setLinkedin,
+                      placeholder: "linkedin.com/in/you",
+                    },
+                    {
+                      icon: Globe,
+                      label: "Website",
+                      value: website,
+                      set: setWebsite,
+                      placeholder: "https://yoursite.com",
+                    },
                   ].map(({ icon: Icon, label, value, set, placeholder }) => (
                     <div key={label} className="space-y-1">
-                      <label className="text-[10px] font-mono text-white/40">{label}</label>
+                      <label className="text-[10px] font-mono text-white/40">
+                        {label}
+                      </label>
                       <div className="relative">
-                        <Icon size={14} className="absolute left-3 top-3 text-white/25" />
+                        <Icon
+                          size={14}
+                          className="absolute left-3 top-3 text-white/25"
+                        />
                         <input
                           value={value}
-                          onChange={e => set(e.target.value)}
+                          onChange={(e) => set(e.target.value)}
                           placeholder={placeholder}
                           className="w-full py-2.5 pl-9 pr-3 text-sm text-white bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-orange-500/50 transition placeholder-white/20"
                         />
                       </div>
                     </div>
                   ))}
-                  <p className="text-[10px] text-white/25 text-center pt-1">All optional. You can add these later in settings.</p>
+                  <p className="text-[10px] text-white/25 text-center pt-1">
+                    All optional. You can add these later in settings.
+                  </p>
                 </div>
               </StepMotion>
             )}
@@ -790,24 +1068,36 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               <StepMotion key="step7" dir={dir}>
                 <MicroCopy step={7} />
                 <div className="grid grid-cols-2 gap-2">
-                  {GOALS.map(goal => {
+                  {GOALS.map((goal) => {
                     const selected = goals.includes(goal.id);
                     return (
                       <motion.button
                         key={goal.id}
-                        onClick={() => setGoals(prev =>
-                          prev.includes(goal.id) ? prev.filter(g => g !== goal.id) : [...prev, goal.id]
-                        )}
+                        onClick={() =>
+                          setGoals((prev) =>
+                            prev.includes(goal.id)
+                              ? prev.filter((g) => g !== goal.id)
+                              : [...prev, goal.id],
+                          )
+                        }
                         className={`p-3 rounded-2xl border text-left transition-all ${
                           selected
-                            ? "bg-gradient-to-br from-red-500/20 to-orange-500/20 border-orange-500/40 text-white"
+                            ? "bg-linear-to-br from-red-500/20 to-orange-500/20 border-orange-500/40 text-white"
                             : "bg-white/3 border-white/8 text-white/50 hover:border-white/20"
                         }`}
                         whileTap={{ scale: 0.97 }}
                       >
-                        <div className="text-lg mb-1" aria-hidden="true">{goal.icon}</div>
-                        <p className="text-xs font-medium capitalize leading-snug">{goal.label}</p>
-                        {selected && <div className="mt-1.5 w-3 h-3 rounded-full bg-gradient-to-br from-red-400 to-orange-400 flex items-center justify-center"><Check size={8} className="text-white" /></div>}
+                        <div className="text-lg mb-1" aria-hidden="true">
+                          {goal.icon}
+                        </div>
+                        <p className="text-xs font-medium capitalize leading-snug">
+                          {goal.label}
+                        </p>
+                        {selected && (
+                          <div className="mt-1.5 w-3 h-3 rounded-full bg-linear-to-br from-red-400 to-orange-400 flex items-center justify-center">
+                            <Check size={8} className="text-white" />
+                          </div>
+                        )}
                       </motion.button>
                     );
                   })}
@@ -823,35 +1113,50 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                     initial={{ scale: 0, rotate: -20 }}
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                    className="w-24 h-24 rounded-3xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-2xl shadow-orange-500/40"
+                    className="w-24 h-24 rounded-3xl bg-linear-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-2xl shadow-orange-500/40"
                   >
                     <PartyPopper size={40} className="text-white" />
                   </motion.div>
 
                   <div>
-                    <h2 className="text-2xl font-serif font-bold text-white">Profile complete!</h2>
+                    <h2 className="text-2xl font-serif font-bold text-white">
+                      Profile complete!
+                    </h2>
                     <p className="text-sm text-white/50 mt-2 leading-relaxed">
-                      Welcome, {displayName.split(" ")[0]}. Your profile is set up and ready to attract meaningful connections.
+                      Welcome, {displayName.split(" ")[0]}. Your profile is set
+                      up and ready to attract meaningful connections.
                     </p>
                   </div>
 
                   <div className="w-full grid grid-cols-2 gap-2 text-left">
                     {[
                       { label: "Username", value: `@${username}` },
-                      { label: "Interests", value: `${interests.length} selected` },
+                      {
+                        label: "Interests",
+                        value: `${interests.length} selected`,
+                      },
                       { label: "Goals", value: `${goals.length} set` },
                       { label: "Status", value: "Active" },
-                    ].map(item => (
-                      <div key={item.label} className="p-3 bg-white/5 rounded-xl border border-white/8">
-                        <p className="text-[9px] font-mono text-white/30 uppercase">{item.label}</p>
-                        <p className="text-sm font-semibold text-white mt-0.5">{item.value}</p>
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className="p-3 bg-white/5 rounded-xl border border-white/8"
+                      >
+                        <p className="text-[9px] font-mono text-white/30 uppercase">
+                          {item.label}
+                        </p>
+                        <p className="text-sm font-semibold text-white mt-0.5">
+                          {item.value}
+                        </p>
                       </div>
                     ))}
                   </div>
 
                   <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/15 border border-amber-500/25 rounded-xl">
                     <span className="text-amber-400 text-lg">⬡</span>
-                    <p className="text-sm text-amber-300 font-semibold">+100 Welcome Tokens earned!</p>
+                    <p className="text-sm text-amber-300 font-semibold">
+                      +100 Welcome Tokens earned!
+                    </p>
                   </div>
                 </div>
               </StepMotion>
@@ -868,29 +1173,39 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <ArrowLeft size={14} />
                 Back
               </button>
-            ) : <div />}
+            ) : (
+              <div />
+            )}
 
             {step < TOTAL_STEPS ? (
               <motion.button
                 onClick={goNext}
                 disabled={saving}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-sm font-semibold rounded-xl shadow-lg shadow-orange-500/20 disabled:opacity-50 transition"
+                className="flex items-center gap-2 px-6 py-2.5 bg-linear-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-sm font-semibold rounded-xl shadow-lg shadow-orange-500/20 disabled:opacity-50 transition"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
               >
                 {saving ? <Loader size={14} className="animate-spin" /> : null}
-                {step === 3 ? "Continue" : step === 6 ? "Almost done!" : "Continue"}
+                {step === 3
+                  ? "Continue"
+                  : step === 6
+                    ? "Almost done!"
+                    : "Continue"}
                 <ArrowRight size={14} />
               </motion.button>
             ) : (
               <motion.button
                 onClick={handleComplete}
                 disabled={saving}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-sm font-bold rounded-xl shadow-xl shadow-orange-500/30 disabled:opacity-50 transition"
+                className="flex items-center gap-2 px-6 py-2.5 bg-linear-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-sm font-bold rounded-xl shadow-xl shadow-orange-500/30 disabled:opacity-50 transition"
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
               >
-                {saving ? <Loader size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                {saving ? (
+                  <Loader size={14} className="animate-spin" />
+                ) : (
+                  <Sparkles size={14} />
+                )}
                 Enter Palrene
               </motion.button>
             )}

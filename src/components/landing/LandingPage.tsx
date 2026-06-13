@@ -3,19 +3,42 @@ import { useStore } from "../../store";
 import { motion, AnimatePresence, useScroll, useTransform } from "motion/react";
 import { features } from "../../data/landing/features";
 import FeatureCard from "./FeatureCard";
-import { ArrowRight, Heart, Shield, Sparkles, Users, MessageCircle, Zap, Volume2, VolumeX, Globe, CircleCheck as CheckCircle, TrendingUp, Award, ChevronRight, Radio } from "lucide-react";
+import {
+  ArrowRight,
+  Heart,
+  Shield,
+  Sparkles,
+  Users,
+  MessageCircle,
+  Zap,
+  Volume2,
+  VolumeX,
+  Globe,
+  CircleCheck as CheckCircle,
+  TrendingUp,
+  Award,
+  ChevronRight,
+  Radio,
+} from "lucide-react";
 import AuthModal from "../modals/AuthModal";
 import Footer from "./Footer";
 import TestimonialsSection from "./testimonials/TestimonialsSection";
 import AuthCard from "../auth/AuthCard";
 import { supabase } from "@/src/lib/supabase";
 
-const SC_TRACK_URL = "https://soundcloud.com/aphina-dog/indila-love-story-sped-up";
+const SC_TRACK_URL =
+  "https://soundcloud.com/aphina-dog/indila-love-story-sped-up";
 const scEmbedUrl = (autoplay: boolean) =>
   `https://w.soundcloud.com/player/?url=${encodeURIComponent(SC_TRACK_URL)}&color=%23f97316&auto_play=${autoplay ? "true" : "false"}&hide_related=true&show_comments=false&show_user=true&show_reposts=false`;
 
 // Animated stat counter
-function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
+function AnimatedCounter({
+  target,
+  suffix = "",
+}: {
+  target: number;
+  suffix?: string;
+}) {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
   const started = useRef(false);
@@ -40,7 +63,7 @@ function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: str
           }, duration / steps);
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
@@ -71,7 +94,12 @@ function AmbientParticles() {
         <motion.div
           key={p.id}
           className="absolute rounded-full bg-orange-400/20"
-          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size }}
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+          }}
           animate={{
             y: [-20, 20, -20],
             x: [-10, 10, -10],
@@ -110,7 +138,11 @@ function FloatingCard({
     >
       <motion.div
         animate={{ y: [-floatY / 2, floatY / 2, -floatY / 2] }}
-        transition={{ duration: 4 + delay, repeat: Infinity, ease: "easeInOut" }}
+        transition={{
+          duration: 4 + delay,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
       >
         {children}
       </motion.div>
@@ -135,7 +167,10 @@ export default function LandingPage() {
   const [scInteracted, setScInteracted] = useState(false);
   const [subIndex, setSubIndex] = useState(0);
   const heroRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
   const heroParallax = useTransform(scrollYProgress, [0, 1], [0, -80]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
@@ -147,7 +182,10 @@ export default function LandingPage() {
   }, []);
 
   const handleLogin = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error) throw error;
     console.log("Logged in:", data.user);
   };
@@ -160,7 +198,9 @@ export default function LandingPage() {
   };
 
   const scrollToReg = () => {
-    document.getElementById("registration-section")?.scrollIntoView({ behavior: "smooth" });
+    document
+      .getElementById("registration-section")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   const stats = [
@@ -172,13 +212,14 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-black text-neutral-800 dark:text-neutral-100 overflow-x-hidden">
-
       {/* ─── STICKY HEADER ─── */}
       <header className="sticky top-0 z-50 w-full">
         <div className="mx-4 mt-3 mb-1 rounded-2xl bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border border-neutral-200/60 dark:border-white/10 shadow-lg shadow-black/5 px-5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 shadow-md shadow-orange-500/30">
-              <span className="font-serif text-sm font-bold text-white italic">P</span>
+            <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-linear-to-br from-red-500 to-orange-500 shadow-md shadow-orange-500/30">
+              <span className="font-serif text-sm font-bold text-white italic">
+                P
+              </span>
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-yellow-300 animate-ping opacity-80" />
             </div>
             <div>
@@ -196,17 +237,21 @@ export default function LandingPage() {
               onClick={() => setScInteracted((p) => !p)}
               className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border transition-all duration-300 ${
                 scInteracted
-                  ? "bg-gradient-to-r from-orange-500/20 to-amber-500/20 border-orange-500/30 text-orange-600 dark:text-orange-400"
+                  ? "bg-linear-to-r from-orange-500/20 to-amber-500/20 border-orange-500/30 text-orange-600 dark:text-orange-400"
                   : "border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:border-orange-500/50 hover:text-orange-500"
               }`}
             >
-              {scInteracted ? <Volume2 size={11} className="animate-pulse" /> : <Radio size={11} />}
+              {scInteracted ? (
+                <Volume2 size={11} className="animate-pulse" />
+              ) : (
+                <Radio size={11} />
+              )}
               {scInteracted ? "Music On" : "Play Music"}
             </button>
 
             <button
               onClick={scrollToReg}
-              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-mono text-[10px] font-bold uppercase tracking-wider rounded-xl shadow-md shadow-orange-500/20 transition-all duration-300 hover:scale-105 active:scale-98"
+              className="flex items-center gap-1.5 px-4 py-2 bg-linear-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-mono text-[10px] font-bold uppercase tracking-wider rounded-xl shadow-md shadow-orange-500/20 transition-all duration-300 hover:scale-105 active:scale-98"
             >
               <span>Join Free</span>
               <ArrowRight size={11} />
@@ -221,7 +266,7 @@ export default function LandingPage() {
         className="relative min-h-screen flex items-center overflow-hidden"
       >
         {/* Animated mesh gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-neutral-950 via-zinc-900 to-neutral-950">
+        <div className="absolute inset-0 bg-linear-to-br from-neutral-950 via-zinc-900 to-neutral-950">
           <motion.div
             className="absolute inset-0"
             animate={{
@@ -243,13 +288,23 @@ export default function LandingPage() {
           <motion.div
             className="absolute w-80 h-80 rounded-full bg-orange-500/10 blur-3xl"
             animate={{ x: [40, -40, 40], y: [30, -30, 30] }}
-            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+            transition={{
+              duration: 14,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 3,
+            }}
             style={{ bottom: "15%", right: "8%" }}
           />
           <motion.div
             className="absolute w-64 h-64 rounded-full bg-amber-500/6 blur-3xl"
             animate={{ x: [-30, 30, -30], y: [-20, 50, -20] }}
-            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 6 }}
+            transition={{
+              duration: 16,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 6,
+            }}
             style={{ top: "50%", left: "40%" }}
           />
         </div>
@@ -259,14 +314,15 @@ export default function LandingPage() {
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
             backgroundSize: "60px 60px",
           }}
         />
 
         <motion.div
           style={{ y: heroParallax, opacity: heroOpacity }}
-          className="relative z-10 w-full max-w-7xl mx-auto px-6 py-24 grid lg:grid-cols-2 gap-16 items-center"
+          className="relative z-10 w-full max-w-7xl mx-auto px-6 py-24 grid lg:gribg-linear-to-ritems-center"
         >
           {/* LEFT — Headline & CTAs */}
           <div className="space-y-8">
@@ -276,7 +332,10 @@ export default function LandingPage() {
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-6">
-                <Sparkles size={11} className="text-yellow-300 fill-current animate-pulse" />
+                <Sparkles
+                  size={11}
+                  className="text-yellow-300 fill-current animate-pulse"
+                />
                 <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-white/80">
                   A living digital connection universe
                 </span>
@@ -285,7 +344,7 @@ export default function LandingPage() {
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-serif font-bold text-white leading-[1.02] tracking-tight">
                 Relationships
                 <br />
-                <span className="bg-gradient-to-r from-red-400 via-orange-400 to-amber-400 bg-clip-text text-transparent">
+                <span className="bg-linear-to-r from-red-400 via-orange-400 to-amber-400 bg-clip-text text-transparent">
                   Without
                 </span>
                 <br />
@@ -309,7 +368,9 @@ export default function LandingPage() {
               </div>
 
               <p className="mt-4 text-sm sm:text-base text-white/55 leading-relaxed max-w-lg">
-                One platform for friendship, dating, mentorship, healing, and every form of human connection. Built for people who believe that every bond matters.
+                One platform for friendship, dating, mentorship, healing, and
+                every form of human connection. Built for people who believe
+                that every bond matters.
               </p>
             </motion.div>
 
@@ -318,14 +379,21 @@ export default function LandingPage() {
               className="flex flex-col sm:flex-row gap-3"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                delay: 0.25,
+                duration: 0.7,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
               <button
                 onClick={scrollToReg}
-                className="group flex items-center justify-center gap-2 px-7 py-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-mono text-xs font-bold uppercase tracking-wider rounded-2xl shadow-xl shadow-orange-500/30 transition-all duration-300 hover:scale-105 hover:shadow-orange-500/50 active:scale-98"
+                className="group flex items-center justify-center gap-2 px-7 py-4 bg-linear-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-mono text-xs font-bold uppercase tracking-wider rounded-2xl shadow-xl shadow-orange-500/30 transition-all duration-300 hover:scale-105 hover:shadow-orange-500/50 active:scale-98"
               >
                 <span>Start for Free</span>
-                <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight
+                  size={14}
+                  className="group-hover:translate-x-0.5 transition-transform"
+                />
               </button>
 
               <button
@@ -338,7 +406,10 @@ export default function LandingPage() {
               >
                 {scInteracted ? (
                   <>
-                    <Radio size={14} className="animate-pulse text-orange-300" />
+                    <Radio
+                      size={14}
+                      className="animate-pulse text-orange-300"
+                    />
                     <span>Music Playing</span>
                     <span className="flex items-end gap-0.5 h-3">
                       {[1, 2, 3, 4].map((v) => (
@@ -399,7 +470,10 @@ export default function LandingPage() {
                 { icon: CheckCircle, text: "Free to Join" },
                 { icon: Globe, text: "Global Community" },
               ].map(({ icon: Icon, text }) => (
-                <div key={text} className="flex items-center gap-1.5 text-white/50 text-[11px] font-mono">
+                <div
+                  key={text}
+                  className="flex items-center gap-1.5 text-white/50 text-[11px] font-mono"
+                >
                   <Icon size={12} className="text-green-400" />
                   {text}
                 </div>
@@ -408,12 +482,16 @@ export default function LandingPage() {
           </div>
 
           {/* RIGHT — Floating social cards */}
-          <div className="relative hidden lg:flex items-center justify-center h-[520px]">
+          <div className="relative hidden lg:flex items-center justify-center h-130">
             {/* Base glow orb */}
-            <div className="absolute w-72 h-72 rounded-full bg-gradient-to-br from-orange-500/20 to-red-500/10 blur-3xl" />
+            <div className="absolute w-72 h-72 rounded-full bg-linear-to-br from-orange-500/20 to-red-500/10 blur-3xl" />
 
             {/* Profile card — top left */}
-            <FloatingCard className="top-4 left-0 w-56 p-4" delay={0.4} floatY={10}>
+            <FloatingCard
+              className="top-4 left-0 w-56 p-4"
+              delay={0.4}
+              floatY={10}
+            >
               <div className="flex items-center gap-3 mb-3">
                 <div className="relative">
                   <img
@@ -424,21 +502,33 @@ export default function LandingPage() {
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white/20" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-white">Julian Vance</p>
-                  <p className="text-[10px] text-white/50 font-mono">Astrophysicist · NYC</p>
+                  <p className="text-xs font-semibold text-white">
+                    Julian Vance
+                  </p>
+                  <p className="text-[10px] text-white/50 font-mono">
+                    Astrophysicist · NYC
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-orange-500/20 rounded-xl">
                 <Heart size={10} className="text-red-400 fill-current" />
-                <span className="text-[10px] text-white/70 font-mono">98% compatibility match</span>
+                <span className="text-[10px] text-white/70 font-mono">
+                  98% compatibility match
+                </span>
               </div>
             </FloatingCard>
 
             {/* Connection request card — top right */}
-            <FloatingCard className="top-12 right-0 w-52 p-3.5" delay={0.6} floatY={12}>
+            <FloatingCard
+              className="top-12 right-0 w-52 p-3.5"
+              delay={0.6}
+              floatY={12}
+            >
               <div className="flex items-center gap-2 mb-2.5">
                 <Users size={13} className="text-orange-400" />
-                <span className="text-[10px] font-mono font-bold text-white/80 uppercase tracking-wider">New Connection</span>
+                <span className="text-[10px] font-mono font-bold text-white/80 uppercase tracking-wider">
+                  New Connection
+                </span>
               </div>
               <div className="flex items-center gap-2 mb-3">
                 <img
@@ -447,37 +537,61 @@ export default function LandingPage() {
                   alt="Sophia"
                 />
                 <div>
-                  <p className="text-[11px] font-semibold text-white">Sophia Loris</p>
+                  <p className="text-[11px] font-semibold text-white">
+                    Sophia Loris
+                  </p>
                   <p className="text-[9px] text-white/50">wants to connect</p>
                 </div>
               </div>
               <div className="flex gap-1.5">
-                <button className="flex-1 py-1 rounded-lg bg-gradient-to-r from-red-500 to-orange-500 text-white text-[9px] font-bold font-mono uppercase tracking-wider">Accept</button>
-                <button className="flex-1 py-1 rounded-lg bg-white/10 text-white/60 text-[9px] font-mono uppercase tracking-wider">Later</button>
+                <button className="flex-1 py-1 rounded-lg bg-linear-to-r from-red-500 to-orange-500 text-white text-[9px] font-bold font-mono uppercase tracking-wider">
+                  Accept
+                </button>
+                <button className="flex-1 py-1 rounded-lg bg-white/10 text-white/60 text-[9px] font-mono uppercase tracking-wider">
+                  Later
+                </button>
               </div>
             </FloatingCard>
 
             {/* Token reward card — center */}
-            <FloatingCard className="top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-48 p-3.5" delay={0.5} floatY={6}>
+            <FloatingCard
+              className="top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-48 p-3.5"
+              delay={0.5}
+              floatY={6}
+            >
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-amber-400 text-lg">⬡</span>
                 <div>
-                  <p className="text-[10px] font-mono font-bold text-white/80 uppercase tracking-wider">Token Earned</p>
-                  <p className="text-[9px] text-white/40">Daily reward claimed</p>
+                  <p className="text-[10px] font-mono font-bold text-white/80 uppercase tracking-wider">
+                    Token Earned
+                  </p>
+                  <p className="text-[9px] text-white/40">
+                    Daily reward claimed
+                  </p>
                 </div>
               </div>
               <div className="flex items-center justify-between px-2.5 py-1.5 bg-amber-500/15 rounded-xl border border-amber-500/20">
-                <span className="text-[10px] text-amber-300 font-mono font-bold">+50 tokens</span>
+                <span className="text-[10px] text-amber-300 font-mono font-bold">
+                  +50 tokens
+                </span>
                 <Zap size={11} className="text-amber-400 animate-pulse" />
               </div>
             </FloatingCard>
 
             {/* Message preview card — bottom left */}
-            <FloatingCard className="bottom-20 left-2 w-56 p-3.5" delay={0.7} floatY={9}>
+            <FloatingCard
+              className="bottom-20 left-2 w-56 p-3.5"
+              delay={0.7}
+              floatY={9}
+            >
               <div className="flex items-center gap-2 mb-2">
                 <MessageCircle size={12} className="text-orange-400" />
-                <span className="text-[10px] font-mono font-bold text-white/80 uppercase tracking-wider">New Message</span>
-                <span className="ml-auto text-[9px] text-white/30 font-mono">2m ago</span>
+                <span className="text-[10px] font-mono font-bold text-white/80 uppercase tracking-wider">
+                  New Message
+                </span>
+                <span className="ml-auto text-[9px] text-white/30 font-mono">
+                  2m ago
+                </span>
               </div>
               <div className="flex items-start gap-2">
                 <img
@@ -486,7 +600,9 @@ export default function LandingPage() {
                   alt="Zen"
                 />
                 <div>
-                  <p className="text-[11px] font-semibold text-white">Zen Sato</p>
+                  <p className="text-[11px] font-semibold text-white">
+                    Zen Sato
+                  </p>
                   <p className="text-[10px] text-white/50 leading-relaxed line-clamp-2">
                     "Your perspective on this resonates deeply with me..."
                   </p>
@@ -495,13 +611,23 @@ export default function LandingPage() {
             </FloatingCard>
 
             {/* AI recommendation — bottom right */}
-            <FloatingCard className="bottom-8 right-0 w-52 p-3.5" delay={0.8} floatY={11}>
+            <FloatingCard
+              className="bottom-8 right-0 w-52 p-3.5"
+              delay={0.8}
+              floatY={11}
+            >
               <div className="flex items-center gap-2 mb-2">
-                <Sparkles size={12} className="text-yellow-400 fill-current animate-pulse" />
-                <span className="text-[10px] font-mono font-bold text-white/80 uppercase tracking-wider">Poly AI Suggests</span>
+                <Sparkles
+                  size={12}
+                  className="text-yellow-400 fill-current animate-pulse"
+                />
+                <span className="text-[10px] font-mono font-bold text-white/80 uppercase tracking-wider">
+                  Poly AI Suggests
+                </span>
               </div>
               <p className="text-[10px] text-white/60 leading-relaxed">
-                3 new soul matches based on your interests in music and philosophy.
+                3 new soul matches based on your interests in music and
+                philosophy.
               </p>
               <button className="mt-2 flex items-center gap-1 text-[10px] font-mono text-orange-400 hover:text-orange-300 transition">
                 <span>View matches</span>
@@ -510,7 +636,11 @@ export default function LandingPage() {
             </FloatingCard>
 
             {/* Active users badge — floating */}
-            <FloatingCard className="bottom-2 left-1/2 -translate-x-1/2 px-4 py-2" delay={0.9} floatY={5}>
+            <FloatingCard
+              className="bottom-2 left-1/2 -translate-x-1/2 px-4 py-2"
+              delay={0.9}
+              floatY={5}
+            >
               <div className="flex items-center gap-2.5">
                 <div className="flex -space-x-2">
                   {[
@@ -518,11 +648,17 @@ export default function LandingPage() {
                     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&auto=format&fit=crop&q=80",
                     "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=40&auto=format&fit=crop&q=80",
                   ].map((src, i) => (
-                    <img key={i} src={src} className="w-6 h-6 rounded-full border-2 border-white/10 object-cover" alt="" />
+                    <img
+                      key={i}
+                      src={src}
+                      className="w-6 h-6 rounded-full border-2 border-white/10 object-cover"
+                      alt=""
+                    />
                   ))}
                 </div>
                 <span className="text-[10px] font-mono text-white/70">
-                  <span className="text-green-400 font-bold">1,247</span> online now
+                  <span className="text-green-400 font-bold">1,247</span> online
+                  now
                 </span>
               </div>
             </FloatingCard>
@@ -537,24 +673,31 @@ export default function LandingPage() {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
         >
-          <span className="text-[9px] font-mono uppercase tracking-widest text-white/30">Scroll to explore</span>
+          <span className="text-[9px] font-mono uppercase tracking-widest text-white/30">
+            Scroll to explore
+          </span>
           <div className="w-5 h-8 rounded-full border border-white/20 flex items-start justify-center p-1">
             <motion.div
               className="w-1 h-1.5 rounded-full bg-white/40"
               animate={{ y: [0, 14, 0] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+              transition={{
+                duration: 1.6,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
             />
           </div>
         </motion.div>
       </section>
 
       {/* ─── ANIMATED STATS ─── */}
-      <section className="relative py-16 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 overflow-hidden">
+      <section className="relative py-16 bg-linear-to-r from-red-500 via-orange-500 to-amber-500 overflow-hidden">
         <div className="absolute inset-0 bg-black/10" />
         <motion.div
           className="absolute inset-0 opacity-20"
           style={{
-            backgroundImage: "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 70%)",
+            backgroundImage:
+              "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15) 0%, transparent 70%)",
           }}
         />
         <div className="relative max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -570,7 +713,9 @@ export default function LandingPage() {
               <div className="text-3xl sm:text-4xl font-serif font-bold text-white">
                 <AnimatedCounter target={stat.value} suffix={stat.suffix} />
               </div>
-              <p className="text-xs font-mono text-white/70 uppercase tracking-wider mt-1">{stat.label}</p>
+              <p className="text-xs font-mono text-white/70 uppercase tracking-wider mt-1">
+                {stat.label}
+              </p>
             </motion.div>
           ))}
         </div>
@@ -592,7 +737,8 @@ export default function LandingPage() {
             Built for human connection
           </h2>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-            One place to meet people, strengthen relationships, discover communities, and create lasting connections.
+            One place to meet people, strengthen relationships, discover
+            communities, and create lasting connections.
           </p>
         </motion.div>
 
@@ -665,20 +811,26 @@ export default function LandingPage() {
                 transition={{ delay: i * 0.1 }}
                 whileHover={{ y: -6 }}
               >
-                <div className="aspect-[4/5] relative overflow-hidden">
+                <div className="aspect-4/5 relative overflow-hidden">
                   <img
                     src={card.img}
                     alt={card.label}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
-                  <div className={`absolute inset-0 bg-gradient-to-t ${card.accent} to-transparent opacity-70`} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  <div
+                    className={`absolute inset-0 bg-linear-to-t ${card.accent} to-transparent opacity-70`}
+                  />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-5">
                     <div className="flex items-center gap-2 mb-1">
                       <Icon size={14} className="text-white" />
-                      <span className="text-xs font-bold font-mono text-white uppercase tracking-wider">{card.label}</span>
+                      <span className="text-xs font-bold font-mono text-white uppercase tracking-wider">
+                        {card.label}
+                      </span>
                     </div>
-                    <p className="text-[11px] text-white/75 leading-relaxed">{card.desc}</p>
+                    <p className="text-[11px] text-white/75 leading-relaxed">
+                      {card.desc}
+                    </p>
                   </div>
                 </div>
               </motion.div>
@@ -705,10 +857,30 @@ export default function LandingPage() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { icon: Shield, title: "Verified Profiles", desc: "Every member is verified for authentic, safe connections.", color: "text-green-500" },
-            { icon: Sparkles, title: "AI-Powered Matching", desc: "Poly AI finds your compatibility beyond surface metrics.", color: "text-yellow-500" },
-            { icon: Heart, title: "All Relationship Types", desc: "Friendship, romance, mentorship — no judgment, no limits.", color: "text-red-500" },
-            { icon: TrendingUp, title: "Token Rewards", desc: "Earn tokens for positive engagement and connection.", color: "text-amber-500" },
+            {
+              icon: Shield,
+              title: "Verified Profiles",
+              desc: "Every member is verified for authentic, safe connections.",
+              color: "text-green-500",
+            },
+            {
+              icon: Sparkles,
+              title: "AI-Powered Matching",
+              desc: "Poly AI finds your compatibility beyond surface metrics.",
+              color: "text-yellow-500",
+            },
+            {
+              icon: Heart,
+              title: "All Relationship Types",
+              desc: "Friendship, romance, mentorship — no judgment, no limits.",
+              color: "text-red-500",
+            },
+            {
+              icon: TrendingUp,
+              title: "Token Rewards",
+              desc: "Earn tokens for positive engagement and connection.",
+              color: "text-amber-500",
+            },
           ].map((item, i) => {
             const Icon = item.icon;
             return (
@@ -721,11 +893,17 @@ export default function LandingPage() {
                 transition={{ delay: i * 0.08 }}
                 whileHover={{ y: -3 }}
               >
-                <div className={`w-10 h-10 rounded-xl bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ${item.color}`}>
+                <div
+                  className={`w-10 h-10 rounded-xl bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ${item.color}`}
+                >
                   <Icon size={20} />
                 </div>
-                <h3 className="text-sm font-bold text-neutral-900 dark:text-white mb-1.5">{item.title}</h3>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">{item.desc}</p>
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-white mb-1.5">
+                  {item.title}
+                </h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                  {item.desc}
+                </p>
               </motion.div>
             );
           })}
@@ -734,7 +912,7 @@ export default function LandingPage() {
 
       {/* ─── CTA BANNER ─── */}
       <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-zinc-900 to-neutral-950">
+        <div className="absolute inset-0 bg-linear-to-br from-neutral-900 via-zinc-900 to-neutral-950">
           <motion.div
             className="absolute inset-0"
             animate={{
@@ -764,16 +942,17 @@ export default function LandingPage() {
           </div>
           <h2 className="text-3xl sm:text-5xl font-serif font-bold text-white leading-tight">
             Your people are{" "}
-            <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
               already here.
             </span>
           </h2>
           <p className="text-sm text-white/50 max-w-md mx-auto leading-relaxed">
-            Start your journey toward authentic connection. Free forever, no credit card needed.
+            Start your journey toward authentic connection. Free forever, no
+            credit card needed.
           </p>
           <button
             onClick={scrollToReg}
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-mono text-sm font-bold uppercase tracking-wider rounded-2xl shadow-2xl shadow-orange-500/40 hover:shadow-orange-500/60 transition-all duration-300 hover:scale-105 active:scale-98"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-linear-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-mono text-sm font-bold uppercase tracking-wider rounded-2xl shadow-2xl shadow-orange-500/40 hover:shadow-orange-500/60 transition-all duration-300 hover:scale-105 active:scale-98"
           >
             <span>Resonate Today</span>
             <ArrowRight size={16} />

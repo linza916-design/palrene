@@ -1,13 +1,32 @@
 import React from "react";
 import { motion } from "motion/react";
-import { Sparkles, Moon, Heart, MessageCircle, Users, Compass, Search, Bell, Zap } from "lucide-react";
+import {
+  Sparkles,
+  Moon,
+  Heart,
+  MessageCircle,
+  Users,
+  Compass,
+  Search,
+  Bell,
+  Zap,
+} from "lucide-react";
 
 interface NullStateProps {
   title: string;
   description: string;
   ctaText?: string;
   onCtaClick?: () => void;
-  iconType?: "sparkly" | "empty" | "heart" | "chat" | "users" | "compass" | "search" | "bell" | "zap";
+  iconType?:
+    | "sparkly"
+    | "empty"
+    | "heart"
+    | "chat"
+    | "users"
+    | "compass"
+    | "search"
+    | "bell"
+    | "zap";
 }
 
 const iconComponents = {
@@ -23,13 +42,17 @@ const iconComponents = {
 };
 
 const iconColors = {
-  sparkly: "from-yellow-500/15 to-orange-500/15 border-yellow-500/20 text-yellow-500",
-  empty: "from-neutral-500/10 to-neutral-400/10 border-neutral-400/20 text-neutral-400",
+  sparkly:
+    "from-yellow-500/15 to-orange-500/15 border-yellow-500/20 text-yellow-500",
+  empty:
+    "from-neutral-500/10 to-neutral-400/10 border-neutral-400/20 text-neutral-400",
   heart: "from-red-500/15 to-pink-500/15 border-red-500/20 text-red-500",
   chat: "from-orange-500/15 to-amber-500/15 border-orange-500/20 text-orange-500",
   users: "from-blue-500/15 to-indigo-500/15 border-blue-500/20 text-blue-400",
-  compass: "from-emerald-500/15 to-teal-500/15 border-emerald-500/20 text-emerald-500",
-  search: "from-purple-500/15 to-violet-500/15 border-purple-500/20 text-purple-400",
+  compass:
+    "from-emerald-500/15 to-teal-500/15 border-emerald-500/20 text-emerald-500",
+  search:
+    "from-purple-500/15 to-violet-500/15 border-purple-500/20 text-purple-400",
   bell: "from-orange-500/15 to-red-500/15 border-orange-500/20 text-orange-500",
   zap: "from-amber-500/15 to-yellow-500/15 border-amber-500/20 text-amber-500",
 };
@@ -62,7 +85,7 @@ export default function NullState({
           duration: 4.5,
           ease: "easeInOut",
         }}
-        className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${colorClass} flex items-center justify-center border`}
+        className={`w-16 h-16 rounded-2xl bg-linear-to-br ${colorClass} flex items-center justify-center border`}
       >
         <Icon size={28} className="opacity-80" />
       </motion.div>
@@ -89,7 +112,7 @@ export default function NullState({
       {ctaText && onCtaClick && (
         <motion.button
           onClick={onCtaClick}
-          className="px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-white bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 rounded-xl transition shadow-md shadow-orange-500/20"
+          className="px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-white bg-linear-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 rounded-xl transition shadow-md shadow-orange-500/20"
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.97 }}
         >

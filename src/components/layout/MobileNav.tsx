@@ -1,17 +1,30 @@
 import React from "react";
 import { useStore } from "../../store";
-import { Hop as Home, Compass, Bell, MessageCircle, User, Sparkles, Shield } from "lucide-react";
+import {
+  Hop as Home,
+  Compass,
+  Bell,
+  MessageCircle,
+  User,
+  Sparkles,
+  Shield,
+} from "lucide-react";
 import { motion } from "motion/react";
 
 export default function MobileNav() {
-  const { currentView, setView, currentUser, profiles, notifications } = useStore();
+  const { currentView, setView, currentUser, profiles, notifications } =
+    useStore();
 
   if (!currentUser) return null;
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const registeredHumans = (profiles || []).filter((p) => p.id !== "poly-ai");
-  const isFirstThreeRegistered = registeredHumans.slice(0, 3).some((p) => p.id === currentUser?.id);
-  const isUserAdmin = isFirstThreeRegistered || currentUser.email.toLowerCase() === "kamyavince@gmail.com";
+  const isFirstThreeRegistered = registeredHumans
+    .slice(0, 3)
+    .some((p) => p.id === currentUser?.id);
+  const isUserAdmin =
+    isFirstThreeRegistered ||
+    currentUser.email.toLowerCase() === "kamyavince@gmail.com";
 
   const navItems = [
     { id: "home", label: "Home", icon: Home },
@@ -36,7 +49,7 @@ export default function MobileNav() {
             <button
               key={item.id}
               onClick={() => setView(item.id)}
-              className="relative flex flex-col items-center justify-center min-w-[48px] outline-none group"
+              className="relative flex flex-col items-center justify-center min-w-12 outline-none group"
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
             >
@@ -44,8 +57,8 @@ export default function MobileNav() {
                 className={`relative p-2 rounded-xl transition-all duration-200 ${
                   isActive
                     ? item.accent
-                      ? "bg-gradient-to-br from-yellow-500/20 to-orange-500/20 text-yellow-500 dark:text-yellow-400"
-                      : "bg-gradient-to-br from-red-500/12 to-orange-500/12 text-red-500 dark:text-orange-400"
+                      ? "bg-linear-to-br from-yellow-500/20 to-orange-500/20 text-yellow-500 dark:text-yellow-400"
+                      : "bg-linear-to-br from-red-500/12 to-orange-500/12 text-red-500 dark:text-orange-400"
                     : "text-neutral-400 dark:text-neutral-500"
                 }`}
                 whileTap={{ scale: 0.88 }}
@@ -82,7 +95,9 @@ export default function MobileNav() {
                 <motion.div
                   layoutId="mobile-nav-indicator"
                   className={`absolute -bottom-0.5 w-4 h-0.5 rounded-full ${
-                    item.accent ? "bg-yellow-400" : "bg-gradient-to-r from-red-500 to-orange-500"
+                    item.accent
+                      ? "bg-yellow-400"
+                      : "bg-linear-to-r from-red-500 to-orange-500"
                   }`}
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />

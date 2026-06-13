@@ -18,8 +18,10 @@ export const DEFAULT_ADS = [
   {
     id: "ad-1",
     title: "Master Emotional Intelligence",
-    description: "Unlock deeper connections with AI-powered relationship coaching. Start your journey today.",
-    image_url: "https://images.unsplash.com/photo-1517245386807-bb43f4025cc3?w=600&auto=format&fit=crop&q=80",
+    description:
+      "Unlock deeper connections with AI-powered relationship coaching. Start your journey today.",
+    image_url:
+      "https://images.unsplash.com/photo-1517245386807-bb43f4025cc3?w=600&auto=format&fit=crop&q=80",
     link_url: "#",
     sponsor_name: "Connected Minds",
     sponsor_logo: undefined,
@@ -27,8 +29,10 @@ export const DEFAULT_ADS = [
   {
     id: "ad-2",
     title: "Premium Vinyl Collection",
-    description: "Discover rare classical and jazz records. Hand-curated selections for audiophiles.",
-    image_url: "https://images.unsplash.com/photo-1539625319135-8d3c9f2b2d39?w=600&auto=format&fit=crop&q=80",
+    description:
+      "Discover rare classical and jazz records. Hand-curated selections for audiophiles.",
+    image_url:
+      "https://images.unsplash.com/photo-1539625319135-8d3c9f2b2d39?w=600&auto=format&fit=crop&q=80",
     link_url: "#",
     sponsor_name: "Vinyl Dreams",
     sponsor_logo: undefined,
@@ -36,8 +40,10 @@ export const DEFAULT_ADS = [
   {
     id: "ad-3",
     title: "Mindful Meditation Retreats",
-    description: "Find your inner peace at our exclusive wellness destinations worldwide.",
-    image_url: "https://images.unsplash.com/photo-1506905925346-21bda4d68885?w=600&auto=format&fit=crop&q=80",
+    description:
+      "Find your inner peace at our exclusive wellness destinations worldwide.",
+    image_url:
+      "https://images.unsplash.com/photo-1506905925346-21bda4d68885?w=600&auto=format&fit=crop&q=80",
     link_url: "#",
     sponsor_name: "Serene Spaces",
     sponsor_logo: undefined,
@@ -45,7 +51,8 @@ export const DEFAULT_ADS = [
 ];
 
 export default function SponsoredPost({ ad }: SponsoredPostProps) {
-  const adData = ad || DEFAULT_ADS[Math.floor(Math.random() * DEFAULT_ADS.length)];
+  const adData =
+    ad || DEFAULT_ADS[Math.floor(Math.random() * DEFAULT_ADS.length)];
 
   return (
     <motion.div
@@ -70,7 +77,7 @@ export default function SponsoredPost({ ad }: SponsoredPostProps) {
         className="block cursor-pointer"
       >
         {/* Image */}
-        <div className="aspect-[4/3] overflow-hidden rounded-t-3xl">
+        <div className="aspect-4/3 overflow-hidden rounded-t-3xl">
           <img
             src={adData.image_url}
             alt={adData.title}
@@ -89,7 +96,7 @@ export default function SponsoredPost({ ad }: SponsoredPostProps) {
                 className="w-5 h-5 rounded-full object-cover"
               />
             ) : (
-              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-[8px] font-bold">
+              <div className="w-5 h-5 rounded-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-[8px] font-bold">
                 {adData.sponsor_name.charAt(0)}
               </div>
             )}

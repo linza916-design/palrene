@@ -18,7 +18,9 @@ export default function DailyStreakCard({
   hasClaimedToday = false,
 }: DailyStreakCardProps) {
   // Get the next milestone
-  const nextMilestone = STREAK_MILESTONES.find((m) => m > currentStreak) || STREAK_MILESTONES[STREAK_MILESTONES.length - 1];
+  const nextMilestone =
+    STREAK_MILESTONES.find((m) => m > currentStreak) ||
+    STREAK_MILESTONES[STREAK_MILESTONES.length - 1];
   const progressToNext = currentStreak / nextMilestone;
   const bonusAtNext = Math.min(nextMilestone * 2, 50);
 
@@ -57,7 +59,8 @@ export default function DailyStreakCard({
       {/* Week indicator */}
       <div className="flex justify-center gap-1 mb-4">
         {DAYS.map((day, i) => {
-          const isActive = i < (currentStreak % 7) || (currentStreak >= 7 && i < 7);
+          const isActive =
+            i < currentStreak % 7 || (currentStreak >= 7 && i < 7);
           const isToday = i === new Date().getDay();
 
           return (
@@ -65,10 +68,10 @@ export default function DailyStreakCard({
               key={i}
               className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold ${
                 isActive
-                  ? "bg-gradient-to-br from-orange-400 to-red-500 text-white"
+                  ? "bg-linear-to-br from-orange-400 to-red-500 text-white"
                   : isToday
-                  ? "bg-orange-500/10 text-orange-500 border border-orange-500/30"
-                  : "bg-neutral-100 dark:bg-neutral-900 text-neutral-400"
+                    ? "bg-orange-500/10 text-orange-500 border border-orange-500/30"
+                    : "bg-neutral-100 dark:bg-neutral-900 text-neutral-400"
               }`}
             >
               {day}
@@ -81,12 +84,16 @@ export default function DailyStreakCard({
       {currentStreak < 100 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-neutral-500 font-mono">Next milestone: {nextMilestone} days</span>
-            <span className="text-orange-500 font-semibold">+{bonusAtNext} bonus</span>
+            <span className="text-neutral-500 font-mono">
+              Next milestone: {nextMilestone} days
+            </span>
+            <span className="text-orange-500 font-semibold">
+              +{bonusAtNext} bonus
+            </span>
           </div>
           <div className="h-2 bg-neutral-100 dark:bg-neutral-900 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-orange-400 to-red-500"
+              className="h-full bg-linear-to-r from-orange-400 to-red-500"
               initial={{ width: 0 }}
               animate={{ width: `${progressToNext * 100}%` }}
               transition={{ duration: 0.5, ease: "easeOut" }}
@@ -100,7 +107,7 @@ export default function DailyStreakCard({
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="mt-3 flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400/10 to-orange-500/10 rounded-lg py-2"
+          className="mt-3 flex items-center justify-center gap-2 bg-linear-to-r from-yellow-400/10 to-orange-500/10 rounded-lg py-2"
         >
           <Trophy size={14} className="text-yellow-500" />
           <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">
@@ -111,7 +118,8 @@ export default function DailyStreakCard({
 
       {longestStreak > currentStreak && (
         <p className="text-center text-[10px] text-neutral-400 mt-3">
-          Personal best: <span className="font-semibold">{longestStreak} days</span>
+          Personal best:{" "}
+          <span className="font-semibold">{longestStreak} days</span>
         </p>
       )}
     </motion.div>

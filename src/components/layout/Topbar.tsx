@@ -1,24 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import { useStore } from "../../store";
 import { Search, Bell, Sun, Moon, Sparkles, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import RewardedAdModal from "../tokens/RewardedAdModal";
 
-export default function Topbar() {
-  const {
-    currentUser,
-    theme,
-    setTheme,
-    currentView,
-    setView,
-    searchQuery,
-    setSearchQuery,
-    notifications,
-  } = useStore();
+export const Topbar = memo(function Topbar() {
+  // Select atomic properties individually to avoid state subscription thrashing
+  const currentUser = useStore((state) => state.currentUser);
+  const theme = useStore((state) => state.theme);
+  const setTheme = useStore((state) => state.setTheme);
+  const currentView = useStore((state) => state.currentView);
+  const setView = useStore((state) => state.setView);
+  const searchQuery = useStore((state) => state.searchQuery);
+  const setSearchQuery = useStore((state) => state.setSearchQuery);
+  const notifications = useStore((state) => state.notifications);
 
   const [adModalOpen, setAdModalOpen] = useState(false);
-  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // Safety fallback values
   const tokenBalance = currentUser?.token_balance || 0;
+  const unreadCount = notifications
+    ? notifications.filter((n) => !n.read).length
+    : 0;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -32,14 +35,14 @@ export default function Topbar() {
   return (
     <>
       <header className="sticky top-0 z-40 w-full px-4 pt-3 pb-2">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 bg-gradient-to-r from-red-700/90 via-orange-600/85 to-rose-700/90 backdrop-blur-xl border border-white/10 shadow-lg shadow-black/20 rounded-2xl px-4 py-2.5 text-white">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 bg-linear-to-r from-red-700/90 via-orange-600/85 to-rose-700/90 backdrop-blur-xl border border-white/10 shadow-lg shadow-black/20 rounded-2xl px-4 py-2.5 text-white">
           {/* Brand Logo */}
           <div
             onClick={() => setView(currentUser ? "home" : "landing")}
             className="flex items-center space-x-2.5 cursor-pointer select-none group shrink-0"
           >
             <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-white shadow-md shadow-orange-900/30 group-hover:scale-105 transition duration-300">
-              <span className="font-serif text-base italic font-bold bg-gradient-to-br from-red-500 to-orange-600 bg-clip-text text-transparent">
+              <span className="font-serif text-base italic font-bold bg-linear-to-br from-red-500 to-orange-600 bg-clip-text text-transparent">
                 P
               </span>
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-yellow-300 animate-ping opacity-80" />
@@ -80,7 +83,9 @@ export default function Topbar() {
                 title="Earn tokens by watching an ad"
                 aria-label={`Token balance: ${tokenBalance}. Click to earn more.`}
               >
-                <span className="text-amber-300 text-sm" aria-hidden="true">⬡</span>
+                <span className="text-amber-300 text-sm" aria-hidden="true">
+                  ⬡
+                </span>
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={tokenBalance}
@@ -100,7 +105,9 @@ export default function Topbar() {
               <button
                 onClick={() => setView("ai-poly")}
                 className={`flex items-center space-x-1 px-3 py-1.5 text-xs font-mono rounded-xl bg-white/10 border border-white/20 hover:bg-white/20 transition duration-300 ${
-                  currentView === "ai-poly" ? "ring-2 ring-yellow-300/60 bg-white/20" : ""
+                  currentView === "ai-poly"
+                    ? "ring-2 ring-yellow-300/60 bg-white/20"
+                    : ""
                 }`}
               >
                 <Sparkles size={12} className="text-yellow-300 animate-pulse" />
@@ -129,7 +136,10 @@ export default function Topbar() {
                 className="relative p-2 rounded-xl hover:bg-white/15 transition group"
                 aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
               >
-                <Bell size={17} className="group-hover:rotate-12 transition-transform duration-300" />
+                <Bell
+                  size={17}
+                  className="group-hover:rotate-12 transition-transform duration-300"
+                />
                 {unreadCount > 0 && (
                   <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 border border-white/20 text-[8px] font-bold text-white shadow-sm">
                     {unreadCount > 9 ? "9+" : unreadCount}
@@ -149,8 +159,10 @@ export default function Topbar() {
                   alt={currentUser.full_name}
                   className="w-7 h-7 rounded-lg object-cover border border-white/20 group-hover:scale-105 transition"
                 />
-                <span className="hidden lg:inline text-xs font-medium max-w-[80px] truncate">
-                  {currentUser.full_name.split(" ")[0]}
+                <span className="hidden lg:inline text-xs font-medium max-w-20 truncate">
+                  {currentUser.full_name
+                    ? currentUser.full_name.split(" ")[0]
+                    : ""}
                 </span>
               </div>
             ) : (
@@ -166,7 +178,12 @@ export default function Topbar() {
         </div>
       </header>
 
-      <RewardedAdModal isOpen={adModalOpen} onClose={() => setAdModalOpen(false)} />
+      <RewardedAdModal
+        isOpen={adModalOpen}
+        onClose={() => setAdModalOpen(false)}
+      />
     </>
   );
-}
+});
+
+export default Topbar;
