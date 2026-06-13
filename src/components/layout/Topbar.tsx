@@ -155,8 +155,8 @@ export const Topbar = memo(function Topbar() {
                 className="flex items-center space-x-2 cursor-pointer select-none group border border-white/20 hover:border-white/40 p-1 pl-1 pr-2.5 rounded-xl bg-white/8 hover:bg-white/15 transition"
               >
                 <img
-                  src={currentUser.avatar_url}
-                  alt={currentUser.full_name}
+                  src={currentUser.avatar_url || "https://dicebear.com"} // Uses a clean default avatar if empty
+                  alt={currentUser.full_name || "User Profile"}
                   className="w-7 h-7 rounded-lg object-cover border border-white/20 group-hover:scale-105 transition"
                 />
                 <span className="hidden lg:inline text-xs font-medium max-w-20 truncate">

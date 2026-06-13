@@ -55,8 +55,8 @@ export default function Sidebar() {
           <div className="flex items-center space-x-2.5 mb-3">
             <div className="relative shrink-0">
               <img
-                src={currentUser.avatar_url}
-                alt={currentUser.full_name}
+                src={currentUser.avatar_url || "https://dicebear.com"}
+                alt={currentUser.full_name || "User Profile"}
                 className="w-9 h-9 rounded-xl object-cover border border-orange-500/20"
               />
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-zinc-950" />
