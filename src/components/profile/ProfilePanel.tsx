@@ -220,7 +220,10 @@ export default function ProfilePanel() {
     connectionStatus === "connected" ||
     targetProfile.id === "poly-ai";
   const rsStatus = targetProfile.relationship_status || "Private";
-  const rsConfig = RELATIONSHIP_CONFIG[rsStatus];
+  const rsConfig = RELATIONSHIP_CONFIG[rsStatus] || {
+    color: "bg-zinc-500/10 text-zinc-400 text-zinc-300 border border-white/5",
+    label: rsStatus || "Private",
+  };
   const tierConfig = TIERS[targetProfile.subscription_tier || "Free"];
 
   return (
@@ -467,7 +470,7 @@ export default function ProfilePanel() {
                 )}
                 {tierConfig.label && (
                   <span
-                    className={`px-2 py-0.5 text-xs font-semibold rounded-full ${tierConfig.color}`}
+                    className={`px-2 py-0.5 text-xs font-semibold rounded-full ${tierConfig.color || "bg-zinc-500/10 text-zinc-400"}`}
                   >
                     {tierConfig.label}
                   </span>
@@ -482,7 +485,7 @@ export default function ProfilePanel() {
               {/* Status Badges */}
               <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className={`px-3 py-1.5 text-xs font-medium rounded-full ${rsConfig.color}`}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full ${rsConfig.color || "bg-zinc-500/10 text-zinc-400"}`}
                 >
                   {rsConfig.icon} {rsStatus}
                 </span>

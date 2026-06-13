@@ -231,7 +231,7 @@ export default function PostCard({ post }: PostCardProps) {
 
           {/* Voting options */}
           <div className="space-y-2">
-            {post.quiz.options.map((opt, idx) => {
+            {post.quiz?.options?.map((opt, idx) => {
               const itemVotes = post.quiz?.votes[idx] || 0;
               const percent =
                 totalVotes > 0 ? Math.round((itemVotes / totalVotes) * 100) : 0;
@@ -306,7 +306,7 @@ export default function PostCard({ post }: PostCardProps) {
             shouldBlur ? "blur-md select-none saturate-50 contrast-125" : ""
           }`}
         >
-          {post.media_urls.map((url, i) => (
+          {(post.media_urls || []).map((url, i) => (
             <img
               key={i}
               src={url}

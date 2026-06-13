@@ -303,7 +303,7 @@ export default function ExpandablePostCard({
               onClick={handleProfileClick}
             >
               <img
-                src={post.profile.avatar_url}
+                src={post.profile.avatar_url || "https://dicebear.com"}
                 alt={post.profile.full_name}
                 width={44}
                 height={44}
